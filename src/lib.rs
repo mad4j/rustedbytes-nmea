@@ -22,18 +22,18 @@ pub enum MessageType {
 #[derive(Debug, Clone)]
 pub struct GgaData<'a> {
     pub time: Option<&'a str>,
-    pub latitude: Option<&'a str>,
-    pub lat_direction: Option<&'a str>,
-    pub longitude: Option<&'a str>,
-    pub lon_direction: Option<&'a str>,
-    pub fix_quality: Option<&'a str>,
-    pub num_satellites: Option<&'a str>,
-    pub hdop: Option<&'a str>,
-    pub altitude: Option<&'a str>,
-    pub altitude_units: Option<&'a str>,
-    pub geoid_separation: Option<&'a str>,
-    pub geoid_units: Option<&'a str>,
-    pub age_of_diff: Option<&'a str>,
+    pub latitude: Option<f64>,
+    pub lat_direction: Option<char>,
+    pub longitude: Option<f64>,
+    pub lon_direction: Option<char>,
+    pub fix_quality: Option<u8>,
+    pub num_satellites: Option<u8>,
+    pub hdop: Option<f32>,
+    pub altitude: Option<f32>,
+    pub altitude_units: Option<char>,
+    pub geoid_separation: Option<f32>,
+    pub geoid_units: Option<char>,
+    pub age_of_diff: Option<f32>,
     pub diff_station_id: Option<&'a str>,
 }
 
@@ -41,69 +41,69 @@ pub struct GgaData<'a> {
 #[derive(Debug, Clone)]
 pub struct RmcData<'a> {
     pub time: Option<&'a str>,
-    pub status: Option<&'a str>,
-    pub latitude: Option<&'a str>,
-    pub lat_direction: Option<&'a str>,
-    pub longitude: Option<&'a str>,
-    pub lon_direction: Option<&'a str>,
-    pub speed_knots: Option<&'a str>,
-    pub track_angle: Option<&'a str>,
+    pub status: Option<char>,
+    pub latitude: Option<f64>,
+    pub lat_direction: Option<char>,
+    pub longitude: Option<f64>,
+    pub lon_direction: Option<char>,
+    pub speed_knots: Option<f32>,
+    pub track_angle: Option<f32>,
     pub date: Option<&'a str>,
-    pub magnetic_variation: Option<&'a str>,
-    pub mag_var_direction: Option<&'a str>,
+    pub magnetic_variation: Option<f32>,
+    pub mag_var_direction: Option<char>,
 }
 
 /// GSA - GPS DOP and active satellites parameters
 #[derive(Debug, Clone)]
-pub struct GsaData<'a> {
-    pub mode: Option<&'a str>,
-    pub fix_type: Option<&'a str>,
-    pub satellite_ids: [Option<&'a str>; 12],
-    pub pdop: Option<&'a str>,
-    pub hdop: Option<&'a str>,
-    pub vdop: Option<&'a str>,
+pub struct GsaData {
+    pub mode: Option<char>,
+    pub fix_type: Option<u8>,
+    pub satellite_ids: [Option<u8>; 12],
+    pub pdop: Option<f32>,
+    pub hdop: Option<f32>,
+    pub vdop: Option<f32>,
 }
 
 /// GSV - GPS Satellites in view parameters
 #[derive(Debug, Clone)]
-pub struct GsvData<'a> {
-    pub num_messages: Option<&'a str>,
-    pub message_num: Option<&'a str>,
-    pub satellites_in_view: Option<&'a str>,
-    pub satellite_info: [Option<SatelliteInfo<'a>>; 4],
+pub struct GsvData {
+    pub num_messages: Option<u8>,
+    pub message_num: Option<u8>,
+    pub satellites_in_view: Option<u8>,
+    pub satellite_info: [Option<SatelliteInfo>; 4],
 }
 
 /// Information about a single satellite
 #[derive(Debug, Clone)]
-pub struct SatelliteInfo<'a> {
-    pub prn: Option<&'a str>,
-    pub elevation: Option<&'a str>,
-    pub azimuth: Option<&'a str>,
-    pub snr: Option<&'a str>,
+pub struct SatelliteInfo {
+    pub prn: Option<u8>,
+    pub elevation: Option<u16>,
+    pub azimuth: Option<u16>,
+    pub snr: Option<u8>,
 }
 
 /// GLL - Geographic Position parameters
 #[derive(Debug, Clone)]
 pub struct GllData<'a> {
-    pub latitude: Option<&'a str>,
-    pub lat_direction: Option<&'a str>,
-    pub longitude: Option<&'a str>,
-    pub lon_direction: Option<&'a str>,
+    pub latitude: Option<f64>,
+    pub lat_direction: Option<char>,
+    pub longitude: Option<f64>,
+    pub lon_direction: Option<char>,
     pub time: Option<&'a str>,
-    pub status: Option<&'a str>,
+    pub status: Option<char>,
 }
 
 /// VTG - Track Made Good and Ground Speed parameters
 #[derive(Debug, Clone)]
-pub struct VtgData<'a> {
-    pub track_true: Option<&'a str>,
-    pub track_true_indicator: Option<&'a str>,
-    pub track_magnetic: Option<&'a str>,
-    pub track_magnetic_indicator: Option<&'a str>,
-    pub speed_knots: Option<&'a str>,
-    pub speed_knots_indicator: Option<&'a str>,
-    pub speed_kph: Option<&'a str>,
-    pub speed_kph_indicator: Option<&'a str>,
+pub struct VtgData {
+    pub track_true: Option<f32>,
+    pub track_true_indicator: Option<char>,
+    pub track_magnetic: Option<f32>,
+    pub track_magnetic_indicator: Option<char>,
+    pub speed_knots: Option<f32>,
+    pub speed_knots_indicator: Option<char>,
+    pub speed_kph: Option<f32>,
+    pub speed_kph_indicator: Option<char>,
 }
 
 /// Parsed NMEA message data
@@ -124,18 +124,18 @@ impl NmeaMessage {
         
         Some(GgaData {
             time: self.get_field_str(1),
-            latitude: self.get_field_str(2),
-            lat_direction: self.get_field_str(3),
-            longitude: self.get_field_str(4),
-            lon_direction: self.get_field_str(5),
-            fix_quality: self.get_field_str(6),
-            num_satellites: self.get_field_str(7),
-            hdop: self.get_field_str(8),
-            altitude: self.get_field_str(9),
-            altitude_units: self.get_field_str(10),
-            geoid_separation: self.get_field_str(11),
-            geoid_units: self.get_field_str(12),
-            age_of_diff: self.get_field_str(13),
+            latitude: self.parse_field_f64(2),
+            lat_direction: self.parse_field_char(3),
+            longitude: self.parse_field_f64(4),
+            lon_direction: self.parse_field_char(5),
+            fix_quality: self.parse_field_u8(6),
+            num_satellites: self.parse_field_u8(7),
+            hdop: self.parse_field_f32(8),
+            altitude: self.parse_field_f32(9),
+            altitude_units: self.parse_field_char(10),
+            geoid_separation: self.parse_field_f32(11),
+            geoid_units: self.parse_field_char(12),
+            age_of_diff: self.parse_field_f32(13),
             diff_station_id: self.get_field_str(14),
         })
     }
@@ -148,60 +148,60 @@ impl NmeaMessage {
         
         Some(RmcData {
             time: self.get_field_str(1),
-            status: self.get_field_str(2),
-            latitude: self.get_field_str(3),
-            lat_direction: self.get_field_str(4),
-            longitude: self.get_field_str(5),
-            lon_direction: self.get_field_str(6),
-            speed_knots: self.get_field_str(7),
-            track_angle: self.get_field_str(8),
+            status: self.parse_field_char(2),
+            latitude: self.parse_field_f64(3),
+            lat_direction: self.parse_field_char(4),
+            longitude: self.parse_field_f64(5),
+            lon_direction: self.parse_field_char(6),
+            speed_knots: self.parse_field_f32(7),
+            track_angle: self.parse_field_f32(8),
             date: self.get_field_str(9),
-            magnetic_variation: self.get_field_str(10),
-            mag_var_direction: self.get_field_str(11),
+            magnetic_variation: self.parse_field_f32(10),
+            mag_var_direction: self.parse_field_char(11),
         })
     }
     
     /// Extract GSA message parameters
-    pub fn as_gsa(&self) -> Option<GsaData<'_>> {
+    pub fn as_gsa(&self) -> Option<GsaData> {
         if self.message_type != MessageType::GSA {
             return None;
         }
         
         Some(GsaData {
-            mode: self.get_field_str(1),
-            fix_type: self.get_field_str(2),
+            mode: self.parse_field_char(1),
+            fix_type: self.parse_field_u8(2),
             satellite_ids: [
-                self.get_field_str(3),
-                self.get_field_str(4),
-                self.get_field_str(5),
-                self.get_field_str(6),
-                self.get_field_str(7),
-                self.get_field_str(8),
-                self.get_field_str(9),
-                self.get_field_str(10),
-                self.get_field_str(11),
-                self.get_field_str(12),
-                self.get_field_str(13),
-                self.get_field_str(14),
+                self.parse_field_u8(3),
+                self.parse_field_u8(4),
+                self.parse_field_u8(5),
+                self.parse_field_u8(6),
+                self.parse_field_u8(7),
+                self.parse_field_u8(8),
+                self.parse_field_u8(9),
+                self.parse_field_u8(10),
+                self.parse_field_u8(11),
+                self.parse_field_u8(12),
+                self.parse_field_u8(13),
+                self.parse_field_u8(14),
             ],
-            pdop: self.get_field_str(15),
-            hdop: self.get_field_str(16),
-            vdop: self.get_field_str(17),
+            pdop: self.parse_field_f32(15),
+            hdop: self.parse_field_f32(16),
+            vdop: self.parse_field_f32(17),
         })
     }
     
     /// Extract GSV message parameters
-    pub fn as_gsv(&self) -> Option<GsvData<'_>> {
+    pub fn as_gsv(&self) -> Option<GsvData> {
         if self.message_type != MessageType::GSV {
             return None;
         }
         
         let sat1 = if self.get_field_str(4).is_some() {
             Some(SatelliteInfo {
-                prn: self.get_field_str(4),
-                elevation: self.get_field_str(5),
-                azimuth: self.get_field_str(6),
-                snr: self.get_field_str(7),
+                prn: self.parse_field_u8(4),
+                elevation: self.parse_field_u16(5),
+                azimuth: self.parse_field_u16(6),
+                snr: self.parse_field_u8(7),
             })
         } else {
             None
@@ -209,10 +209,10 @@ impl NmeaMessage {
         
         let sat2 = if self.get_field_str(8).is_some() {
             Some(SatelliteInfo {
-                prn: self.get_field_str(8),
-                elevation: self.get_field_str(9),
-                azimuth: self.get_field_str(10),
-                snr: self.get_field_str(11),
+                prn: self.parse_field_u8(8),
+                elevation: self.parse_field_u16(9),
+                azimuth: self.parse_field_u16(10),
+                snr: self.parse_field_u8(11),
             })
         } else {
             None
@@ -220,10 +220,10 @@ impl NmeaMessage {
         
         let sat3 = if self.get_field_str(12).is_some() {
             Some(SatelliteInfo {
-                prn: self.get_field_str(12),
-                elevation: self.get_field_str(13),
-                azimuth: self.get_field_str(14),
-                snr: self.get_field_str(15),
+                prn: self.parse_field_u8(12),
+                elevation: self.parse_field_u16(13),
+                azimuth: self.parse_field_u16(14),
+                snr: self.parse_field_u8(15),
             })
         } else {
             None
@@ -231,19 +231,19 @@ impl NmeaMessage {
         
         let sat4 = if self.get_field_str(16).is_some() {
             Some(SatelliteInfo {
-                prn: self.get_field_str(16),
-                elevation: self.get_field_str(17),
-                azimuth: self.get_field_str(18),
-                snr: self.get_field_str(19),
+                prn: self.parse_field_u8(16),
+                elevation: self.parse_field_u16(17),
+                azimuth: self.parse_field_u16(18),
+                snr: self.parse_field_u8(19),
             })
         } else {
             None
         };
         
         Some(GsvData {
-            num_messages: self.get_field_str(1),
-            message_num: self.get_field_str(2),
-            satellites_in_view: self.get_field_str(3),
+            num_messages: self.parse_field_u8(1),
+            message_num: self.parse_field_u8(2),
+            satellites_in_view: self.parse_field_u8(3),
             satellite_info: [sat1, sat2, sat3, sat4],
         })
     }
@@ -255,30 +255,30 @@ impl NmeaMessage {
         }
         
         Some(GllData {
-            latitude: self.get_field_str(1),
-            lat_direction: self.get_field_str(2),
-            longitude: self.get_field_str(3),
-            lon_direction: self.get_field_str(4),
+            latitude: self.parse_field_f64(1),
+            lat_direction: self.parse_field_char(2),
+            longitude: self.parse_field_f64(3),
+            lon_direction: self.parse_field_char(4),
             time: self.get_field_str(5),
-            status: self.get_field_str(6),
+            status: self.parse_field_char(6),
         })
     }
     
     /// Extract VTG message parameters
-    pub fn as_vtg(&self) -> Option<VtgData<'_>> {
+    pub fn as_vtg(&self) -> Option<VtgData> {
         if self.message_type != MessageType::VTG {
             return None;
         }
         
         Some(VtgData {
-            track_true: self.get_field_str(1),
-            track_true_indicator: self.get_field_str(2),
-            track_magnetic: self.get_field_str(3),
-            track_magnetic_indicator: self.get_field_str(4),
-            speed_knots: self.get_field_str(5),
-            speed_knots_indicator: self.get_field_str(6),
-            speed_kph: self.get_field_str(7),
-            speed_kph_indicator: self.get_field_str(8),
+            track_true: self.parse_field_f32(1),
+            track_true_indicator: self.parse_field_char(2),
+            track_magnetic: self.parse_field_f32(3),
+            track_magnetic_indicator: self.parse_field_char(4),
+            speed_knots: self.parse_field_f32(5),
+            speed_knots_indicator: self.parse_field_char(6),
+            speed_kph: self.parse_field_f32(7),
+            speed_kph_indicator: self.parse_field_char(8),
         })
     }
     
@@ -289,6 +289,31 @@ impl NmeaMessage {
         } else {
             None
         }
+    }
+    
+    /// Helper to parse a field as u8
+    fn parse_field_u8(&self, index: usize) -> Option<u8> {
+        self.get_field_str(index)?.parse().ok()
+    }
+    
+    /// Helper to parse a field as u16
+    fn parse_field_u16(&self, index: usize) -> Option<u16> {
+        self.get_field_str(index)?.parse().ok()
+    }
+    
+    /// Helper to parse a field as f32
+    fn parse_field_f32(&self, index: usize) -> Option<f32> {
+        self.get_field_str(index)?.parse().ok()
+    }
+    
+    /// Helper to parse a field as f64
+    fn parse_field_f64(&self, index: usize) -> Option<f64> {
+        self.get_field_str(index)?.parse().ok()
+    }
+    
+    /// Helper to parse a field as char (first character)
+    fn parse_field_char(&self, index: usize) -> Option<char> {
+        self.get_field_str(index)?.chars().next()
     }
 }
 
@@ -426,7 +451,7 @@ impl NmeaParser {
                 
                 if field_count < MAX_FIELDS {
                     let field_bytes = &self.buffer[field_start..field_end];
-                    if field_bytes.len() > 0 {
+                    if !field_bytes.is_empty() {
                         fields[field_count] = Some(Field::from_bytes(field_bytes));
                     }
                     field_count += 1;
@@ -469,12 +494,7 @@ impl NmeaParser {
 
     /// Find a byte in the buffer
     fn find_byte(&self, byte: u8) -> Option<usize> {
-        for i in 0..self.buffer_pos {
-            if self.buffer[i] == byte {
-                return Some(i);
-            }
-        }
-        None
+        (0..self.buffer_pos).find(|&i| self.buffer[i] == byte)
     }
 
     /// Store a message based on its type
@@ -798,15 +818,15 @@ mod tests {
         
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.time, Some("123519"));
-        assert_eq!(gga_data.latitude, Some("4807.038"));
-        assert_eq!(gga_data.lat_direction, Some("N"));
-        assert_eq!(gga_data.longitude, Some("01131.000"));
-        assert_eq!(gga_data.lon_direction, Some("E"));
-        assert_eq!(gga_data.fix_quality, Some("1"));
-        assert_eq!(gga_data.num_satellites, Some("08"));
-        assert_eq!(gga_data.hdop, Some("0.9"));
-        assert_eq!(gga_data.altitude, Some("545.4"));
-        assert_eq!(gga_data.altitude_units, Some("M"));
+        assert_eq!(gga_data.latitude, Some(4807.038));
+        assert_eq!(gga_data.lat_direction, Some('N'));
+        assert_eq!(gga_data.longitude, Some(1131.000));
+        assert_eq!(gga_data.lon_direction, Some('E'));
+        assert_eq!(gga_data.fix_quality, Some(1));
+        assert_eq!(gga_data.num_satellites, Some(8));
+        assert_eq!(gga_data.hdop, Some(0.9));
+        assert_eq!(gga_data.altitude, Some(545.4));
+        assert_eq!(gga_data.altitude_units, Some('M'));
     }
 
     #[test]
@@ -828,13 +848,13 @@ mod tests {
         
         let rmc_data = rmc.unwrap();
         assert_eq!(rmc_data.time, Some("123519"));
-        assert_eq!(rmc_data.status, Some("A"));
-        assert_eq!(rmc_data.latitude, Some("4807.038"));
-        assert_eq!(rmc_data.lat_direction, Some("N"));
-        assert_eq!(rmc_data.longitude, Some("01131.000"));
-        assert_eq!(rmc_data.lon_direction, Some("E"));
-        assert_eq!(rmc_data.speed_knots, Some("022.4"));
-        assert_eq!(rmc_data.track_angle, Some("084.4"));
+        assert_eq!(rmc_data.status, Some('A'));
+        assert_eq!(rmc_data.latitude, Some(4807.038));
+        assert_eq!(rmc_data.lat_direction, Some('N'));
+        assert_eq!(rmc_data.longitude, Some(1131.000));
+        assert_eq!(rmc_data.lon_direction, Some('E'));
+        assert_eq!(rmc_data.speed_knots, Some(22.4));
+        assert_eq!(rmc_data.track_angle, Some(84.4));
         assert_eq!(rmc_data.date, Some("230394"));
     }
 
@@ -856,14 +876,14 @@ mod tests {
         assert!(gsa.is_some());
         
         let gsa_data = gsa.unwrap();
-        assert_eq!(gsa_data.mode, Some("A"));
-        assert_eq!(gsa_data.fix_type, Some("3"));
-        assert_eq!(gsa_data.satellite_ids[0], Some("04"));
-        assert_eq!(gsa_data.satellite_ids[1], Some("05"));
-        assert_eq!(gsa_data.satellite_ids[3], Some("09"));
-        assert_eq!(gsa_data.pdop, Some("2.5"));
-        assert_eq!(gsa_data.hdop, Some("1.3"));
-        assert_eq!(gsa_data.vdop, Some("2.1"));
+        assert_eq!(gsa_data.mode, Some('A'));
+        assert_eq!(gsa_data.fix_type, Some(3));
+        assert_eq!(gsa_data.satellite_ids[0], Some(4));
+        assert_eq!(gsa_data.satellite_ids[1], Some(5));
+        assert_eq!(gsa_data.satellite_ids[3], Some(9));
+        assert_eq!(gsa_data.pdop, Some(2.5));
+        assert_eq!(gsa_data.hdop, Some(1.3));
+        assert_eq!(gsa_data.vdop, Some(2.1));
     }
 
     #[test]
@@ -884,17 +904,17 @@ mod tests {
         assert!(gsv.is_some());
         
         let gsv_data = gsv.unwrap();
-        assert_eq!(gsv_data.num_messages, Some("2"));
-        assert_eq!(gsv_data.message_num, Some("1"));
-        assert_eq!(gsv_data.satellites_in_view, Some("08"));
+        assert_eq!(gsv_data.num_messages, Some(2));
+        assert_eq!(gsv_data.message_num, Some(1));
+        assert_eq!(gsv_data.satellites_in_view, Some(8));
         
         // Check first satellite
         assert!(gsv_data.satellite_info[0].is_some());
         let sat1 = gsv_data.satellite_info[0].as_ref().unwrap();
-        assert_eq!(sat1.prn, Some("01"));
-        assert_eq!(sat1.elevation, Some("40"));
-        assert_eq!(sat1.azimuth, Some("083"));
-        assert_eq!(sat1.snr, Some("46"));
+        assert_eq!(sat1.prn, Some(1));
+        assert_eq!(sat1.elevation, Some(40));
+        assert_eq!(sat1.azimuth, Some(83));
+        assert_eq!(sat1.snr, Some(46));
     }
 
     #[test]
@@ -915,12 +935,12 @@ mod tests {
         assert!(gll.is_some());
         
         let gll_data = gll.unwrap();
-        assert_eq!(gll_data.latitude, Some("4916.45"));
-        assert_eq!(gll_data.lat_direction, Some("N"));
-        assert_eq!(gll_data.longitude, Some("12311.12"));
-        assert_eq!(gll_data.lon_direction, Some("W"));
+        assert_eq!(gll_data.latitude, Some(4916.45));
+        assert_eq!(gll_data.lat_direction, Some('N'));
+        assert_eq!(gll_data.longitude, Some(12311.12));
+        assert_eq!(gll_data.lon_direction, Some('W'));
         assert_eq!(gll_data.time, Some("225444"));
-        assert_eq!(gll_data.status, Some("A"));
+        assert_eq!(gll_data.status, Some('A'));
     }
 
     #[test]
@@ -941,14 +961,14 @@ mod tests {
         assert!(vtg.is_some());
         
         let vtg_data = vtg.unwrap();
-        assert_eq!(vtg_data.track_true, Some("054.7"));
-        assert_eq!(vtg_data.track_true_indicator, Some("T"));
-        assert_eq!(vtg_data.track_magnetic, Some("034.4"));
-        assert_eq!(vtg_data.track_magnetic_indicator, Some("M"));
-        assert_eq!(vtg_data.speed_knots, Some("005.5"));
-        assert_eq!(vtg_data.speed_knots_indicator, Some("N"));
-        assert_eq!(vtg_data.speed_kph, Some("010.2"));
-        assert_eq!(vtg_data.speed_kph_indicator, Some("K"));
+        assert_eq!(vtg_data.track_true, Some(54.7));
+        assert_eq!(vtg_data.track_true_indicator, Some('T'));
+        assert_eq!(vtg_data.track_magnetic, Some(34.4));
+        assert_eq!(vtg_data.track_magnetic_indicator, Some('M'));
+        assert_eq!(vtg_data.speed_knots, Some(5.5));
+        assert_eq!(vtg_data.speed_knots_indicator, Some('N'));
+        assert_eq!(vtg_data.speed_kph, Some(10.2));
+        assert_eq!(vtg_data.speed_kph_indicator, Some('K'));
     }
 
     #[test]
@@ -973,5 +993,164 @@ mod tests {
         // GGA extraction should work
         let gga = msg.as_gga();
         assert!(gga.is_some());
+    }
+
+    #[test]
+    fn test_gga_with_empty_fields() {
+        let mut parser = NmeaParser::new();
+        // GGA message with some empty fields
+        let sentence = b"$GPGGA,123519,,N,,E,1,,,,,M,,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.time, Some("123519"));
+        assert_eq!(gga_data.latitude, None);
+        assert_eq!(gga_data.lat_direction, Some('N'));
+        assert_eq!(gga_data.longitude, None);
+        assert_eq!(gga_data.lon_direction, Some('E'));
+        assert_eq!(gga_data.fix_quality, Some(1));
+        assert_eq!(gga_data.num_satellites, None);
+        assert_eq!(gga_data.hdop, None);
+    }
+
+    #[test]
+    fn test_rmc_with_empty_status() {
+        let mut parser = NmeaParser::new();
+        // RMC message with void status
+        let sentence = b"$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let rmc = msg.as_rmc();
+        assert!(rmc.is_some());
+        
+        let rmc_data = rmc.unwrap();
+        assert_eq!(rmc_data.status, Some('V'));
+    }
+
+    #[test]
+    fn test_gsa_with_partial_satellites() {
+        let mut parser = NmeaParser::new();
+        // GSA message with only a few satellites
+        let sentence = b"$GPGSA,A,3,01,,,,,,,,,,,,2.5,1.3,2.1*39\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsa = msg.as_gsa();
+        assert!(gsa.is_some());
+        
+        let gsa_data = gsa.unwrap();
+        assert_eq!(gsa_data.mode, Some('A'));
+        assert_eq!(gsa_data.fix_type, Some(3));
+        assert_eq!(gsa_data.satellite_ids[0], Some(1));
+        assert_eq!(gsa_data.satellite_ids[1], None);
+        assert_eq!(gsa_data.pdop, Some(2.5));
+        assert_eq!(gsa_data.hdop, Some(1.3));
+        assert_eq!(gsa_data.vdop, Some(2.1));
+    }
+
+    #[test]
+    fn test_gsv_with_partial_satellite_data() {
+        let mut parser = NmeaParser::new();
+        // GSV message with only two satellites
+        let sentence = b"$GPGSV,1,1,02,01,40,083,46,02,17,308,*75\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsv = msg.as_gsv();
+        assert!(gsv.is_some());
+        
+        let gsv_data = gsv.unwrap();
+        assert_eq!(gsv_data.num_messages, Some(1));
+        assert_eq!(gsv_data.satellites_in_view, Some(2));
+        
+        // First satellite should be complete
+        assert!(gsv_data.satellite_info[0].is_some());
+        let sat1 = gsv_data.satellite_info[0].as_ref().unwrap();
+        assert_eq!(sat1.prn, Some(1));
+        assert_eq!(sat1.elevation, Some(40));
+        assert_eq!(sat1.azimuth, Some(83));
+        assert_eq!(sat1.snr, Some(46));
+        
+        // Second satellite should have missing SNR
+        assert!(gsv_data.satellite_info[1].is_some());
+        let sat2 = gsv_data.satellite_info[1].as_ref().unwrap();
+        assert_eq!(sat2.prn, Some(2));
+        assert_eq!(sat2.elevation, Some(17));
+        assert_eq!(sat2.azimuth, Some(308));
+        assert_eq!(sat2.snr, None);
+        
+        // Third and fourth should be None
+        assert!(gsv_data.satellite_info[2].is_none());
+        assert!(gsv_data.satellite_info[3].is_none());
+    }
+
+    #[test]
+    fn test_numeric_type_parsing() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        
+        // Verify types are correctly parsed
+        if let Some(lat) = gga_data.latitude {
+            assert!((lat - 4807.038).abs() < 0.001);
+        }
+        
+        if let Some(lon) = gga_data.longitude {
+            assert!((lon - 1131.000).abs() < 0.001);
+        }
+        
+        if let Some(hdop) = gga_data.hdop {
+            assert!((hdop - 0.9).abs() < 0.01);
+        }
+        
+        if let Some(alt) = gga_data.altitude {
+            assert!((alt - 545.4).abs() < 0.1);
+        }
     }
 }
