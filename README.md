@@ -1,5 +1,11 @@
 # rustedbytes-nmea
 
+[![Crates.io](https://img.shields.io/crates/v/rustedbytes-nmea.svg)](https://crates.io/crates/rustedbytes-nmea)
+[![Documentation](https://docs.rs/rustedbytes-nmea/badge.svg)](https://docs.rs/rustedbytes-nmea)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
+[![Downloads](https://img.shields.io/crates/d/rustedbytes-nmea.svg)](https://crates.io/crates/rustedbytes-nmea)
+
 Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 
 ## Features
