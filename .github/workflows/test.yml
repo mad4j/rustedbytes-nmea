@@ -18,3 +18,29 @@ jobs:
       
     - name: Run tests
       run: cargo test --verbose
+    
+    # Count total number of tests and update badge in README
+    - name: Count tests
+      id: count_tests
+      run: |
+        TEST_COUNT=$(.github/scripts/count_tests.sh)
+        echo "test_count=$TEST_COUNT" >> $GITHUB_OUTPUT
+        echo "Total tests: $TEST_COUNT"
+    
+    - name: Update test badge
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        .github/scripts/update_test_badge.sh ${{ steps.count_tests.outputs.test_count }}
+        
+    - name: Commit badge update
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add README.md
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Update test count badge to ${{ steps.count_tests.outputs.test_count }}"
+          git push
+        fi
