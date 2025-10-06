@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![Downloads](https://img.shields.io/crates/d/rustedbytes-nmea.svg)](https://crates.io/crates/rustedbytes-nmea)
+[![Tests](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml/badge.svg)](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml)
 
 Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 
