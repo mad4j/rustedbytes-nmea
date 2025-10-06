@@ -19,6 +19,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     
+    # Count total number of tests and update badge in README
     - name: Count tests
       id: count_tests
       run: |
