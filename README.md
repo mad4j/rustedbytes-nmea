@@ -256,6 +256,10 @@ Track Made Good and Ground Speed parameters (all fields are optional):
 
 **Note:** VTG messages can be parsed even with all fields empty, as all fields are optional.
 
+## NMEA 0183 Compliance
+
+For detailed information about the library's compliance with the NMEA 0183 standard, including supported and unsupported message types and fields, see the [NMEA 0183 Compliance Matrix](NMEA-183-COMPLIANCE.md).
+
 ## Testing
 
 Run the test suite:
