@@ -21,12 +21,12 @@ pub enum MessageType {
 /// GGA - Global Positioning System Fix Data parameters
 #[derive(Debug, Clone)]
 pub struct GgaData<'a> {
-    pub time: Option<&'a str>,
-    pub latitude: Option<f64>,
-    pub lat_direction: Option<char>,
-    pub longitude: Option<f64>,
-    pub lon_direction: Option<char>,
-    pub fix_quality: Option<u8>,
+    pub time: &'a str,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub fix_quality: u8,
     pub num_satellites: Option<u8>,
     pub hdop: Option<f32>,
     pub altitude: Option<f32>,
@@ -40,15 +40,15 @@ pub struct GgaData<'a> {
 /// RMC - Recommended Minimum Navigation Information parameters
 #[derive(Debug, Clone)]
 pub struct RmcData<'a> {
-    pub time: Option<&'a str>,
-    pub status: Option<char>,
-    pub latitude: Option<f64>,
-    pub lat_direction: Option<char>,
-    pub longitude: Option<f64>,
-    pub lon_direction: Option<char>,
-    pub speed_knots: Option<f32>,
-    pub track_angle: Option<f32>,
-    pub date: Option<&'a str>,
+    pub time: &'a str,
+    pub status: char,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub speed_knots: f32,
+    pub track_angle: f32,
+    pub date: &'a str,
     pub magnetic_variation: Option<f32>,
     pub mag_var_direction: Option<char>,
 }
@@ -56,8 +56,8 @@ pub struct RmcData<'a> {
 /// GSA - GPS DOP and active satellites parameters
 #[derive(Debug, Clone)]
 pub struct GsaData {
-    pub mode: Option<char>,
-    pub fix_type: Option<u8>,
+    pub mode: char,
+    pub fix_type: u8,
     pub satellite_ids: [Option<u8>; 12],
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
@@ -67,9 +67,9 @@ pub struct GsaData {
 /// GSV - GPS Satellites in view parameters
 #[derive(Debug, Clone)]
 pub struct GsvData {
-    pub num_messages: Option<u8>,
-    pub message_num: Option<u8>,
-    pub satellites_in_view: Option<u8>,
+    pub num_messages: u8,
+    pub message_num: u8,
+    pub satellites_in_view: u8,
     pub satellite_info: [Option<SatelliteInfo>; 4],
 }
 
@@ -85,12 +85,12 @@ pub struct SatelliteInfo {
 /// GLL - Geographic Position parameters
 #[derive(Debug, Clone)]
 pub struct GllData<'a> {
-    pub latitude: Option<f64>,
-    pub lat_direction: Option<char>,
-    pub longitude: Option<f64>,
-    pub lon_direction: Option<char>,
-    pub time: Option<&'a str>,
-    pub status: Option<char>,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub time: &'a str,
+    pub status: char,
 }
 
 /// VTG - Track Made Good and Ground Speed parameters
@@ -122,13 +122,21 @@ impl NmeaMessage {
             return None;
         }
         
+        // Validate mandatory fields
+        let time = self.get_field_str(1)?;
+        let latitude = self.parse_field_f64(2)?;
+        let lat_direction = self.parse_field_char(3)?;
+        let longitude = self.parse_field_f64(4)?;
+        let lon_direction = self.parse_field_char(5)?;
+        let fix_quality = self.parse_field_u8(6)?;
+        
         Some(GgaData {
-            time: self.get_field_str(1),
-            latitude: self.parse_field_f64(2),
-            lat_direction: self.parse_field_char(3),
-            longitude: self.parse_field_f64(4),
-            lon_direction: self.parse_field_char(5),
-            fix_quality: self.parse_field_u8(6),
+            time,
+            latitude,
+            lat_direction,
+            longitude,
+            lon_direction,
+            fix_quality,
             num_satellites: self.parse_field_u8(7),
             hdop: self.parse_field_f32(8),
             altitude: self.parse_field_f32(9),
@@ -146,16 +154,27 @@ impl NmeaMessage {
             return None;
         }
         
+        // Validate mandatory fields
+        let time = self.get_field_str(1)?;
+        let status = self.parse_field_char(2)?;
+        let latitude = self.parse_field_f64(3)?;
+        let lat_direction = self.parse_field_char(4)?;
+        let longitude = self.parse_field_f64(5)?;
+        let lon_direction = self.parse_field_char(6)?;
+        let speed_knots = self.parse_field_f32(7)?;
+        let track_angle = self.parse_field_f32(8)?;
+        let date = self.get_field_str(9)?;
+        
         Some(RmcData {
-            time: self.get_field_str(1),
-            status: self.parse_field_char(2),
-            latitude: self.parse_field_f64(3),
-            lat_direction: self.parse_field_char(4),
-            longitude: self.parse_field_f64(5),
-            lon_direction: self.parse_field_char(6),
-            speed_knots: self.parse_field_f32(7),
-            track_angle: self.parse_field_f32(8),
-            date: self.get_field_str(9),
+            time,
+            status,
+            latitude,
+            lat_direction,
+            longitude,
+            lon_direction,
+            speed_knots,
+            track_angle,
+            date,
             magnetic_variation: self.parse_field_f32(10),
             mag_var_direction: self.parse_field_char(11),
         })
@@ -167,9 +186,13 @@ impl NmeaMessage {
             return None;
         }
         
+        // Validate mandatory fields
+        let mode = self.parse_field_char(1)?;
+        let fix_type = self.parse_field_u8(2)?;
+        
         Some(GsaData {
-            mode: self.parse_field_char(1),
-            fix_type: self.parse_field_u8(2),
+            mode,
+            fix_type,
             satellite_ids: [
                 self.parse_field_u8(3),
                 self.parse_field_u8(4),
@@ -195,6 +218,11 @@ impl NmeaMessage {
         if self.message_type != MessageType::GSV {
             return None;
         }
+        
+        // Validate mandatory fields
+        let num_messages = self.parse_field_u8(1)?;
+        let message_num = self.parse_field_u8(2)?;
+        let satellites_in_view = self.parse_field_u8(3)?;
         
         let sat1 = if self.get_field_str(4).is_some() {
             Some(SatelliteInfo {
@@ -241,9 +269,9 @@ impl NmeaMessage {
         };
         
         Some(GsvData {
-            num_messages: self.parse_field_u8(1),
-            message_num: self.parse_field_u8(2),
-            satellites_in_view: self.parse_field_u8(3),
+            num_messages,
+            message_num,
+            satellites_in_view,
             satellite_info: [sat1, sat2, sat3, sat4],
         })
     }
@@ -254,13 +282,21 @@ impl NmeaMessage {
             return None;
         }
         
+        // Validate mandatory fields
+        let latitude = self.parse_field_f64(1)?;
+        let lat_direction = self.parse_field_char(2)?;
+        let longitude = self.parse_field_f64(3)?;
+        let lon_direction = self.parse_field_char(4)?;
+        let time = self.get_field_str(5)?;
+        let status = self.parse_field_char(6)?;
+        
         Some(GllData {
-            latitude: self.parse_field_f64(1),
-            lat_direction: self.parse_field_char(2),
-            longitude: self.parse_field_f64(3),
-            lon_direction: self.parse_field_char(4),
-            time: self.get_field_str(5),
-            status: self.parse_field_char(6),
+            latitude,
+            lat_direction,
+            longitude,
+            lon_direction,
+            time,
+            status,
         })
     }
     
@@ -817,12 +853,12 @@ mod tests {
         assert!(gga.is_some());
         
         let gga_data = gga.unwrap();
-        assert_eq!(gga_data.time, Some("123519"));
-        assert_eq!(gga_data.latitude, Some(4807.038));
-        assert_eq!(gga_data.lat_direction, Some('N'));
-        assert_eq!(gga_data.longitude, Some(1131.000));
-        assert_eq!(gga_data.lon_direction, Some('E'));
-        assert_eq!(gga_data.fix_quality, Some(1));
+        assert_eq!(gga_data.time, "123519");
+        assert_eq!(gga_data.latitude, 4807.038);
+        assert_eq!(gga_data.lat_direction, 'N');
+        assert_eq!(gga_data.longitude, 1131.000);
+        assert_eq!(gga_data.lon_direction, 'E');
+        assert_eq!(gga_data.fix_quality, 1);
         assert_eq!(gga_data.num_satellites, Some(8));
         assert_eq!(gga_data.hdop, Some(0.9));
         assert_eq!(gga_data.altitude, Some(545.4));
@@ -847,15 +883,15 @@ mod tests {
         assert!(rmc.is_some());
         
         let rmc_data = rmc.unwrap();
-        assert_eq!(rmc_data.time, Some("123519"));
-        assert_eq!(rmc_data.status, Some('A'));
-        assert_eq!(rmc_data.latitude, Some(4807.038));
-        assert_eq!(rmc_data.lat_direction, Some('N'));
-        assert_eq!(rmc_data.longitude, Some(1131.000));
-        assert_eq!(rmc_data.lon_direction, Some('E'));
-        assert_eq!(rmc_data.speed_knots, Some(22.4));
-        assert_eq!(rmc_data.track_angle, Some(84.4));
-        assert_eq!(rmc_data.date, Some("230394"));
+        assert_eq!(rmc_data.time, "123519");
+        assert_eq!(rmc_data.status, 'A');
+        assert_eq!(rmc_data.latitude, 4807.038);
+        assert_eq!(rmc_data.lat_direction, 'N');
+        assert_eq!(rmc_data.longitude, 1131.000);
+        assert_eq!(rmc_data.lon_direction, 'E');
+        assert_eq!(rmc_data.speed_knots, 22.4);
+        assert_eq!(rmc_data.track_angle, 84.4);
+        assert_eq!(rmc_data.date, "230394");
     }
 
     #[test]
@@ -876,8 +912,8 @@ mod tests {
         assert!(gsa.is_some());
         
         let gsa_data = gsa.unwrap();
-        assert_eq!(gsa_data.mode, Some('A'));
-        assert_eq!(gsa_data.fix_type, Some(3));
+        assert_eq!(gsa_data.mode, 'A');
+        assert_eq!(gsa_data.fix_type, 3);
         assert_eq!(gsa_data.satellite_ids[0], Some(4));
         assert_eq!(gsa_data.satellite_ids[1], Some(5));
         assert_eq!(gsa_data.satellite_ids[3], Some(9));
@@ -904,9 +940,9 @@ mod tests {
         assert!(gsv.is_some());
         
         let gsv_data = gsv.unwrap();
-        assert_eq!(gsv_data.num_messages, Some(2));
-        assert_eq!(gsv_data.message_num, Some(1));
-        assert_eq!(gsv_data.satellites_in_view, Some(8));
+        assert_eq!(gsv_data.num_messages, 2);
+        assert_eq!(gsv_data.message_num, 1);
+        assert_eq!(gsv_data.satellites_in_view, 8);
         
         // Check first satellite
         assert!(gsv_data.satellite_info[0].is_some());
@@ -935,12 +971,12 @@ mod tests {
         assert!(gll.is_some());
         
         let gll_data = gll.unwrap();
-        assert_eq!(gll_data.latitude, Some(4916.45));
-        assert_eq!(gll_data.lat_direction, Some('N'));
-        assert_eq!(gll_data.longitude, Some(12311.12));
-        assert_eq!(gll_data.lon_direction, Some('W'));
-        assert_eq!(gll_data.time, Some("225444"));
-        assert_eq!(gll_data.status, Some('A'));
+        assert_eq!(gll_data.latitude, 4916.45);
+        assert_eq!(gll_data.lat_direction, 'N');
+        assert_eq!(gll_data.longitude, 12311.12);
+        assert_eq!(gll_data.lon_direction, 'W');
+        assert_eq!(gll_data.time, "225444");
+        assert_eq!(gll_data.status, 'A');
     }
 
     #[test]
@@ -998,7 +1034,7 @@ mod tests {
     #[test]
     fn test_gga_with_empty_fields() {
         let mut parser = NmeaParser::new();
-        // GGA message with some empty fields
+        // GGA message with some empty mandatory fields should fail to parse
         let sentence = b"$GPGGA,123519,,N,,E,1,,,,,M,,M,,*47\r\n";
 
         let mut result = None;
@@ -1011,23 +1047,14 @@ mod tests {
         assert!(result.is_some());
         let msg = result.unwrap();
         let gga = msg.as_gga();
-        assert!(gga.is_some());
-        
-        let gga_data = gga.unwrap();
-        assert_eq!(gga_data.time, Some("123519"));
-        assert_eq!(gga_data.latitude, None);
-        assert_eq!(gga_data.lat_direction, Some('N'));
-        assert_eq!(gga_data.longitude, None);
-        assert_eq!(gga_data.lon_direction, Some('E'));
-        assert_eq!(gga_data.fix_quality, Some(1));
-        assert_eq!(gga_data.num_satellites, None);
-        assert_eq!(gga_data.hdop, None);
+        // Should return None because mandatory fields (latitude, longitude) are empty
+        assert!(gga.is_none());
     }
 
     #[test]
     fn test_rmc_with_empty_status() {
         let mut parser = NmeaParser::new();
-        // RMC message with void status
+        // RMC message with void status (still valid)
         let sentence = b"$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
         let mut result = None;
@@ -1043,7 +1070,7 @@ mod tests {
         assert!(rmc.is_some());
         
         let rmc_data = rmc.unwrap();
-        assert_eq!(rmc_data.status, Some('V'));
+        assert_eq!(rmc_data.status, 'V');
     }
 
     #[test]
@@ -1065,8 +1092,8 @@ mod tests {
         assert!(gsa.is_some());
         
         let gsa_data = gsa.unwrap();
-        assert_eq!(gsa_data.mode, Some('A'));
-        assert_eq!(gsa_data.fix_type, Some(3));
+        assert_eq!(gsa_data.mode, 'A');
+        assert_eq!(gsa_data.fix_type, 3);
         assert_eq!(gsa_data.satellite_ids[0], Some(1));
         assert_eq!(gsa_data.satellite_ids[1], None);
         assert_eq!(gsa_data.pdop, Some(2.5));
@@ -1093,8 +1120,8 @@ mod tests {
         assert!(gsv.is_some());
         
         let gsv_data = gsv.unwrap();
-        assert_eq!(gsv_data.num_messages, Some(1));
-        assert_eq!(gsv_data.satellites_in_view, Some(2));
+        assert_eq!(gsv_data.num_messages, 1);
+        assert_eq!(gsv_data.satellites_in_view, 2);
         
         // First satellite should be complete
         assert!(gsv_data.satellite_info[0].is_some());
@@ -1137,13 +1164,8 @@ mod tests {
         let gga_data = gga.unwrap();
         
         // Verify types are correctly parsed
-        if let Some(lat) = gga_data.latitude {
-            assert!((lat - 4807.038).abs() < 0.001);
-        }
-        
-        if let Some(lon) = gga_data.longitude {
-            assert!((lon - 1131.000).abs() < 0.001);
-        }
+        assert!((gga_data.latitude - 4807.038).abs() < 0.001);
+        assert!((gga_data.longitude - 1131.000).abs() < 0.001);
         
         if let Some(hdop) = gga_data.hdop {
             assert!((hdop - 0.9).abs() < 0.01);
@@ -1152,5 +1174,105 @@ mod tests {
         if let Some(alt) = gga_data.altitude {
             assert!((alt - 545.4).abs() < 0.1);
         }
+    }
+
+    #[test]
+    fn test_gga_missing_time() {
+        let mut parser = NmeaParser::new();
+        // GGA message without time (mandatory field)
+        let sentence = b"$GPGGA,,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        // Should return None because time is mandatory
+        assert!(gga.is_none());
+    }
+
+    #[test]
+    fn test_rmc_missing_mandatory_field() {
+        let mut parser = NmeaParser::new();
+        // RMC message without date (mandatory field)
+        let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,,003.1,W*6A\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let rmc = msg.as_rmc();
+        // Should return None because date is mandatory
+        assert!(rmc.is_none());
+    }
+
+    #[test]
+    fn test_gsa_missing_mode() {
+        let mut parser = NmeaParser::new();
+        // GSA message without mode (mandatory field)
+        let sentence = b"$GPGSA,,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsa = msg.as_gsa();
+        // Should return None because mode is mandatory
+        assert!(gsa.is_none());
+    }
+
+    #[test]
+    fn test_gsv_missing_mandatory_field() {
+        let mut parser = NmeaParser::new();
+        // GSV message without num_messages (mandatory field)
+        let sentence = b"$GPGSV,,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsv = msg.as_gsv();
+        // Should return None because num_messages is mandatory
+        assert!(gsv.is_none());
+    }
+
+    #[test]
+    fn test_gll_missing_status() {
+        let mut parser = NmeaParser::new();
+        // GLL message without status (mandatory field)
+        let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,,*1D\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gll = msg.as_gll();
+        // Should return None because status is mandatory
+        assert!(gll.is_none());
     }
 }
