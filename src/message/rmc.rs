@@ -109,6 +109,7 @@ impl NmeaMessage {
         let date = self.get_field_str(9)?;
 
         Some(RmcData {
+            talker_id: self.talker_id,
             time,
             status,
             latitude,
@@ -355,5 +356,52 @@ mod tests {
         let msg = result.unwrap();
         let rmc = msg.as_rmc();
         assert!(rmc.is_some());
+        
+        let rmc_data = rmc.unwrap();
+        assert_eq!(rmc_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_rmc_multiple_constellations() {
+        let mut parser = NmeaParser::new();
+        
+        // Test GPS
+        let gp_sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let mut gp_result = None;
+        for &c in gp_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gp_result = Some(msg);
+            }
+        }
+        assert!(gp_result.is_some());
+        let gp_msg = gp_result.unwrap();
+        let gp_rmc = gp_msg.as_rmc().unwrap();
+        assert_eq!(gp_rmc.talker_id, crate::types::TalkerId::GP);
+        
+        // Test GLONASS
+        let gl_sentence = b"$GLRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let mut gl_result = None;
+        for &c in gl_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gl_result = Some(msg);
+            }
+        }
+        assert!(gl_result.is_some());
+        let gl_msg = gl_result.unwrap();
+        let gl_rmc = gl_msg.as_rmc().unwrap();
+        assert_eq!(gl_rmc.talker_id, crate::types::TalkerId::GL);
+        
+        // Test Galileo
+        let ga_sentence = b"$GARMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let mut ga_result = None;
+        for &c in ga_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                ga_result = Some(msg);
+            }
+        }
+        assert!(ga_result.is_some());
+        let ga_msg = ga_result.unwrap();
+        let ga_rmc = ga_msg.as_rmc().unwrap();
+        assert_eq!(ga_rmc.talker_id, crate::types::TalkerId::GA);
     }
 }

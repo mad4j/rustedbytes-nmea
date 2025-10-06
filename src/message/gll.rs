@@ -95,6 +95,7 @@ impl NmeaMessage {
         let status = self.parse_field_char(6)?;
 
         Some(GllData {
+            talker_id: self.talker_id,
             latitude,
             lat_direction,
             longitude,
@@ -329,6 +330,40 @@ mod tests {
         let msg = result.unwrap();
         let gll = msg.as_gll();
         assert!(gll.is_some());
+        
+        let gll_data = gll.unwrap();
+        assert_eq!(gll_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_gll_all_constellation_types() {
+        let mut parser = NmeaParser::new();
+        
+        // Test GPS
+        let gp_sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
+        let mut gp_result = None;
+        for &c in gp_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gp_result = Some(msg);
+            }
+        }
+        assert!(gp_result.is_some());
+        let gp_msg = gp_result.unwrap();
+        let gp_gll = gp_msg.as_gll().unwrap();
+        assert_eq!(gp_gll.talker_id, crate::types::TalkerId::GP);
+        
+        // Test BeiDou (GB)
+        let gb_sentence = b"$GBGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
+        let mut gb_result = None;
+        for &c in gb_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gb_result = Some(msg);
+            }
+        }
+        assert!(gb_result.is_some());
+        let gb_msg = gb_result.unwrap();
+        let gb_gll = gb_msg.as_gll().unwrap();
+        assert_eq!(gb_gll.talker_id, crate::types::TalkerId::GB);
     }
 
     #[test]

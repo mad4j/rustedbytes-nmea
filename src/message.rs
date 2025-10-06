@@ -23,6 +23,7 @@ pub(crate) const MAX_FIELDS: usize = 20;
 #[derive(Debug, Clone)]
 pub struct NmeaMessage {
     pub message_type: MessageType,
+    pub talker_id: TalkerId,
     pub fields: [Option<Field>; MAX_FIELDS],
     pub field_count: usize,
     pub timestamp: u64,

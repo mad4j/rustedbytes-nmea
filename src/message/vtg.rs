@@ -104,6 +104,7 @@ impl NmeaMessage {
         }
 
         Some(VtgData {
+            talker_id: self.talker_id,
             track_true: self.parse_field_f32(1),
             track_true_indicator: self.parse_field_char(2),
             track_magnetic: self.parse_field_f32(3),
@@ -380,6 +381,42 @@ mod tests {
         let msg = result.unwrap();
         let vtg = msg.as_vtg();
         assert!(vtg.is_some());
+        
+        let vtg_data = vtg.unwrap();
+        assert_eq!(vtg_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_vtg_mixed_constellation_data() {
+        let mut parser = NmeaParser::new();
+        
+        // Test GPS
+        let gp_sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
+        let mut gp_result = None;
+        for &c in gp_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gp_result = Some(msg);
+            }
+        }
+        assert!(gp_result.is_some());
+        let gp_msg = gp_result.unwrap();
+        let gp_vtg = gp_msg.as_vtg().unwrap();
+        assert_eq!(gp_vtg.talker_id, crate::types::TalkerId::GP);
+        assert_eq!(gp_vtg.track_true, Some(54.7));
+        
+        // Test GLONASS
+        let gl_sentence = b"$GLVTG,154.7,T,134.4,M,015.5,N,028.7,K*48\r\n";
+        let mut gl_result = None;
+        for &c in gl_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gl_result = Some(msg);
+            }
+        }
+        assert!(gl_result.is_some());
+        let gl_msg = gl_result.unwrap();
+        let gl_vtg = gl_msg.as_vtg().unwrap();
+        assert_eq!(gl_vtg.talker_id, crate::types::TalkerId::GL);
+        assert_eq!(gl_vtg.track_true, Some(154.7));
     }
 
     #[test]

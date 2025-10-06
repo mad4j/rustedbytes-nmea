@@ -105,6 +105,7 @@ impl NmeaMessage {
         let fix_type = self.parse_field_u8(2)?;
 
         Some(GsaData {
+            talker_id: self.talker_id,
             mode,
             fix_type,
             satellite_ids: [
@@ -371,5 +372,39 @@ mod tests {
         let msg = result.unwrap();
         let gsa = msg.as_gsa();
         assert!(gsa.is_some());
+        
+        let gsa_data = gsa.unwrap();
+        assert_eq!(gsa_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_gsa_constellation_tracking() {
+        let mut parser = NmeaParser::new();
+        
+        // Test BeiDou
+        let bd_sentence = b"$BDGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+        let mut bd_result = None;
+        for &c in bd_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                bd_result = Some(msg);
+            }
+        }
+        assert!(bd_result.is_some());
+        let bd_msg = bd_result.unwrap();
+        let bd_gsa = bd_msg.as_gsa().unwrap();
+        assert_eq!(bd_gsa.talker_id, crate::types::TalkerId::BD);
+        
+        // Test QZSS
+        let qz_sentence = b"$QZGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+        let mut qz_result = None;
+        for &c in qz_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                qz_result = Some(msg);
+            }
+        }
+        assert!(qz_result.is_some());
+        let qz_msg = qz_result.unwrap();
+        let qz_gsa = qz_msg.as_gsa().unwrap();
+        assert_eq!(qz_gsa.talker_id, crate::types::TalkerId::QZ);
     }
 }

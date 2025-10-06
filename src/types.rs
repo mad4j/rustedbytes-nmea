@@ -1,5 +1,18 @@
 //! NMEA message types and data structures
 
+/// Represents the GNSS constellation (talker ID)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TalkerId {
+    GP, // GPS
+    GL, // GLONASS
+    GA, // Galileo
+    GB, // BeiDou
+    GN, // Multi-GNSS (combined)
+    BD, // BeiDou (alternative)
+    QZ, // QZSS (Quasi-Zenith Satellite System)
+    Unknown,
+}
+
 /// Represents the different NMEA message types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessageType {
@@ -15,6 +28,7 @@ pub enum MessageType {
 /// GGA - Global Positioning System Fix Data parameters
 #[derive(Debug, Clone)]
 pub struct GgaData<'a> {
+    pub talker_id: TalkerId,
     pub time: &'a str,
     pub latitude: f64,
     pub lat_direction: char,
@@ -34,6 +48,7 @@ pub struct GgaData<'a> {
 /// RMC - Recommended Minimum Navigation Information parameters
 #[derive(Debug, Clone)]
 pub struct RmcData<'a> {
+    pub talker_id: TalkerId,
     pub time: &'a str,
     pub status: char,
     pub latitude: f64,
@@ -50,6 +65,7 @@ pub struct RmcData<'a> {
 /// GSA - GPS DOP and active satellites parameters
 #[derive(Debug, Clone)]
 pub struct GsaData {
+    pub talker_id: TalkerId,
     pub mode: char,
     pub fix_type: u8,
     pub satellite_ids: [Option<u8>; 12],
@@ -61,6 +77,7 @@ pub struct GsaData {
 /// GSV - GPS Satellites in view parameters
 #[derive(Debug, Clone)]
 pub struct GsvData {
+    pub talker_id: TalkerId,
     pub num_messages: u8,
     pub message_num: u8,
     pub satellites_in_view: u8,
@@ -79,6 +96,7 @@ pub struct SatelliteInfo {
 /// GLL - Geographic Position parameters
 #[derive(Debug, Clone)]
 pub struct GllData<'a> {
+    pub talker_id: TalkerId,
     pub latitude: f64,
     pub lat_direction: char,
     pub longitude: f64,
@@ -90,6 +108,7 @@ pub struct GllData<'a> {
 /// VTG - Track Made Good and Ground Speed parameters
 #[derive(Debug, Clone)]
 pub struct VtgData {
+    pub talker_id: TalkerId,
     pub track_true: Option<f32>,
     pub track_true_indicator: Option<char>,
     pub track_magnetic: Option<f32>,

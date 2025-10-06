@@ -1,7 +1,7 @@
 //! NMEA sentence parser implementation
 
 use crate::message::{Field, NmeaMessage, MAX_FIELDS};
-use crate::types::MessageType;
+use crate::types::{MessageType, TalkerId};
 
 /// Maximum buffer size for NMEA sentence
 const MAX_SENTENCE_LENGTH: usize = 82;
@@ -94,8 +94,8 @@ impl NmeaParser {
             return None;
         }
 
-        // Extract message type
-        let message_type = self.identify_message_type(&self.buffer[3..6]);
+        // Extract talker ID and message type
+        let (talker_id, message_type) = self.identify_message(&self.buffer[1..6]);
 
         // Parse fields
         let mut fields = [None; MAX_FIELDS];
@@ -120,6 +120,7 @@ impl NmeaParser {
         self.timestamp_counter += 1;
         let message = NmeaMessage {
             message_type,
+            talker_id,
             fields,
             field_count,
             timestamp: self.timestamp_counter,
@@ -131,14 +132,26 @@ impl NmeaParser {
         Some(message)
     }
 
-    /// Identify the message type from the talker ID and message code
-    fn identify_message_type(&self, type_bytes: &[u8]) -> MessageType {
-        if type_bytes.len() < 3 {
-            return MessageType::Unknown;
+    /// Identify the talker ID and message type from the sentence header
+    fn identify_message(&self, header_bytes: &[u8]) -> (TalkerId, MessageType) {
+        if header_bytes.len() < 5 {
+            return (TalkerId::Unknown, MessageType::Unknown);
         }
 
-        // Check last 3 characters (message type)
-        match &type_bytes[type_bytes.len() - 3..] {
+        // Extract talker ID (first 2 characters)
+        let talker_id = match &header_bytes[0..2] {
+            b"GP" => TalkerId::GP,
+            b"GL" => TalkerId::GL,
+            b"GA" => TalkerId::GA,
+            b"GB" => TalkerId::GB,
+            b"GN" => TalkerId::GN,
+            b"BD" => TalkerId::BD,
+            b"QZ" => TalkerId::QZ,
+            _ => TalkerId::Unknown,
+        };
+
+        // Extract message type (last 3 characters)
+        let message_type = match &header_bytes[2..5] {
             b"GGA" => MessageType::GGA,
             b"RMC" => MessageType::RMC,
             b"GSA" => MessageType::GSA,
@@ -146,7 +159,9 @@ impl NmeaParser {
             b"GLL" => MessageType::GLL,
             b"VTG" => MessageType::VTG,
             _ => MessageType::Unknown,
-        }
+        };
+
+        (talker_id, message_type)
     }
 
     /// Find a byte in the buffer
