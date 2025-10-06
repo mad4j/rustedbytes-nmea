@@ -13,6 +13,8 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 
 - `no_std` compatible - can be used in embedded systems
 - Character stream parsing - feed characters one at a time
+- **Multiconstellation support** - tracks which GNSS constellation provided each message
+  - GPS (GP), GLONASS (GL), Galileo (GA), BeiDou (GB/BD), Multi-GNSS (GN), QZSS (QZ)
 - Supports common NMEA message types:
   - GGA (Global Positioning System Fix Data)
   - RMC (Recommended Minimum Navigation Information)
@@ -65,6 +67,7 @@ fn main() {
         // Extract structured parameters
         if let Some(gga_data) = last_gga.as_gga() {
             println!("Time: {}", gga_data.time);
+            println!("Constellation: {:?}", gga_data.talker_id);
             println!("Latitude: {} {}", gga_data.latitude, gga_data.lat_direction);
             println!("Longitude: {} {}", gga_data.longitude, gga_data.lon_direction);
             println!("Altitude: {:?} {:?}", gga_data.altitude, gga_data.altitude_units);
@@ -108,6 +111,55 @@ fn main() {
     }
 }
 ```
+
+### Multiconstellation Support
+
+The library automatically tracks which GNSS constellation provided each message through the `talker_id` field:
+
+```rust
+use rustedbytes_nmea::{NmeaParser, TalkerId};
+
+fn main() {
+    let mut parser = NmeaParser::new();
+    
+    // Parse messages from different constellations
+    let sentences = [
+        b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n", // GPS
+        b"$GLGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n", // GLONASS
+        b"$GAGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n", // Galileo
+        b"$GNGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n", // Multi-GNSS
+    ];
+    
+    for sentence in &sentences {
+        for &byte in sentence.iter() {
+            if let Some(message) = parser.parse_char(byte) {
+                if let Some(gga_data) = message.as_gga() {
+                    match gga_data.talker_id {
+                        TalkerId::GP => println!("GPS fix: {}", gga_data.time),
+                        TalkerId::GL => println!("GLONASS fix: {}", gga_data.time),
+                        TalkerId::GA => println!("Galileo fix: {}", gga_data.time),
+                        TalkerId::GN => println!("Multi-GNSS fix: {}", gga_data.time),
+                        _ => println!("Other constellation fix"),
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+### Supported Constellations
+
+| Talker ID | Constellation | Description |
+|-----------|---------------|-------------|
+| `GP` | GPS | Global Positioning System (USA) |
+| `GL` | GLONASS | Russian satellite navigation |
+| `GA` | Galileo | European satellite navigation |
+| `GB` | BeiDou | Chinese satellite navigation (GBxxxx format) |
+| `BD` | BeiDou | Chinese satellite navigation (BDxxxx format) |
+| `GN` | Multi-GNSS | Combined data from multiple systems |
+| `QZ` | QZSS | Japanese Quasi-Zenith Satellite System |
+
 
 ## API
 

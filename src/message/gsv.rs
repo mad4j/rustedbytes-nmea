@@ -155,6 +155,7 @@ impl NmeaMessage {
         };
 
         Some(GsvData {
+            talker_id: self.talker_id,
             num_messages,
             message_num,
             satellites_in_view,
@@ -430,6 +431,54 @@ mod tests {
         let msg = result.unwrap();
         let gsv = msg.as_gsv();
         assert!(gsv.is_some());
+        
+        let gsv_data = gsv.unwrap();
+        assert_eq!(gsv_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_gsv_satellites_from_different_constellations() {
+        let mut parser = NmeaParser::new();
+        
+        // Test GPS satellites
+        let gp_sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+        let mut gp_result = None;
+        for &c in gp_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gp_result = Some(msg);
+            }
+        }
+        assert!(gp_result.is_some());
+        let gp_msg = gp_result.unwrap();
+        let gp_gsv = gp_msg.as_gsv().unwrap();
+        assert_eq!(gp_gsv.talker_id, crate::types::TalkerId::GP);
+        assert_eq!(gp_gsv.satellites_in_view, 8);
+        
+        // Test GLONASS satellites
+        let gl_sentence = b"$GLGSV,2,1,08,65,40,083,46,66,17,308,41,75,07,344,39,76,22,228,45*75\r\n";
+        let mut gl_result = None;
+        for &c in gl_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                gl_result = Some(msg);
+            }
+        }
+        assert!(gl_result.is_some());
+        let gl_msg = gl_result.unwrap();
+        let gl_gsv = gl_msg.as_gsv().unwrap();
+        assert_eq!(gl_gsv.talker_id, crate::types::TalkerId::GL);
+        
+        // Test Galileo satellites
+        let ga_sentence = b"$GAGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+        let mut ga_result = None;
+        for &c in ga_sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                ga_result = Some(msg);
+            }
+        }
+        assert!(ga_result.is_some());
+        let ga_msg = ga_result.unwrap();
+        let ga_gsv = ga_msg.as_gsv().unwrap();
+        assert_eq!(ga_gsv.talker_id, crate::types::TalkerId::GA);
     }
 
     #[test]

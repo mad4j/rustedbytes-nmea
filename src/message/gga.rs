@@ -106,6 +106,7 @@ impl NmeaMessage {
         let fix_quality = self.parse_field_u8(6)?;
 
         Some(GgaData {
+            talker_id: self.talker_id,
             time,
             latitude,
             lat_direction,
@@ -349,5 +350,92 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.talker_id, crate::types::TalkerId::GN);
+    }
+
+    #[test]
+    fn test_gga_gps_talker_id() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.talker_id, crate::types::TalkerId::GP);
+    }
+
+    #[test]
+    fn test_gga_glonass_talker_id() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GLGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.talker_id, crate::types::TalkerId::GL);
+    }
+
+    #[test]
+    fn test_gga_galileo_talker_id() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GAGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.talker_id, crate::types::TalkerId::GA);
+    }
+
+    #[test]
+    fn test_gga_beidou_talker_id() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GBGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.talker_id, crate::types::TalkerId::GB);
     }
 }
