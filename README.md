@@ -57,10 +57,10 @@ fn main() {
         
         // Extract structured parameters
         if let Some(gga_data) = last_gga.as_gga() {
-            println!("Time: {:?}", gga_data.time);
-            println!("Latitude: {:?} {}", gga_data.latitude, gga_data.lat_direction.unwrap_or(""));
-            println!("Longitude: {:?} {}", gga_data.longitude, gga_data.lon_direction.unwrap_or(""));
-            println!("Altitude: {:?} {}", gga_data.altitude, gga_data.altitude_units.unwrap_or(""));
+            println!("Time: {}", gga_data.time);
+            println!("Latitude: {} {}", gga_data.latitude, gga_data.lat_direction);
+            println!("Longitude: {} {}", gga_data.longitude, gga_data.lon_direction);
+            println!("Altitude: {:?} {:?}", gga_data.altitude, gga_data.altitude_units);
             println!("Satellites: {:?}", gga_data.num_satellites);
         }
     }
@@ -162,81 +162,93 @@ The library provides typed parameter structures for each NMEA message type, allo
 #### `GgaData`
 
 Global Positioning System Fix Data parameters:
-- `time` - UTC time (hhmmss format)
-- `latitude` - Latitude value
-- `lat_direction` - N or S
-- `longitude` - Longitude value
-- `lon_direction` - E or W
-- `fix_quality` - Fix quality (0=invalid, 1=GPS fix, 2=DGPS fix, etc.)
-- `num_satellites` - Number of satellites in use
-- `hdop` - Horizontal Dilution of Precision
-- `altitude` - Altitude above mean sea level
-- `altitude_units` - Units of altitude (M for meters)
-- `geoid_separation` - Height of geoid above WGS84 ellipsoid
-- `geoid_units` - Units of geoid separation
-- `age_of_diff` - Age of differential GPS data
-- `diff_station_id` - Differential reference station ID
+- `time` - **Mandatory** - UTC time (hhmmss format)
+- `latitude` - **Mandatory** - Latitude value
+- `lat_direction` - **Mandatory** - N or S
+- `longitude` - **Mandatory** - Longitude value
+- `lon_direction` - **Mandatory** - E or W
+- `fix_quality` - **Mandatory** - Fix quality (0=invalid, 1=GPS fix, 2=DGPS fix, etc.)
+- `num_satellites` - *Optional* - Number of satellites in use
+- `hdop` - *Optional* - Horizontal Dilution of Precision
+- `altitude` - *Optional* - Altitude above mean sea level
+- `altitude_units` - *Optional* - Units of altitude (M for meters)
+- `geoid_separation` - *Optional* - Height of geoid above WGS84 ellipsoid
+- `geoid_units` - *Optional* - Units of geoid separation
+- `age_of_diff` - *Optional* - Age of differential GPS data
+- `diff_station_id` - *Optional* - Differential reference station ID
+
+**Note:** If any mandatory field is missing or cannot be parsed, `as_gga()` returns `None`.
 
 #### `RmcData`
 
 Recommended Minimum Navigation Information parameters:
-- `time` - UTC time (hhmmss format)
-- `status` - Status (A=active/valid, V=void/invalid)
-- `latitude` - Latitude value
-- `lat_direction` - N or S
-- `longitude` - Longitude value
-- `lon_direction` - E or W
-- `speed_knots` - Speed over ground in knots
-- `track_angle` - Track angle in degrees
-- `date` - Date (ddmmyy format)
-- `magnetic_variation` - Magnetic variation
-- `mag_var_direction` - E or W
+- `time` - **Mandatory** - UTC time (hhmmss format)
+- `status` - **Mandatory** - Status (A=active/valid, V=void/invalid)
+- `latitude` - **Mandatory** - Latitude value
+- `lat_direction` - **Mandatory** - N or S
+- `longitude` - **Mandatory** - Longitude value
+- `lon_direction` - **Mandatory** - E or W
+- `speed_knots` - **Mandatory** - Speed over ground in knots
+- `track_angle` - **Mandatory** - Track angle in degrees
+- `date` - **Mandatory** - Date (ddmmyy format)
+- `magnetic_variation` - *Optional* - Magnetic variation
+- `mag_var_direction` - *Optional* - E or W
+
+**Note:** If any mandatory field is missing or cannot be parsed, `as_rmc()` returns `None`.
 
 #### `GsaData`
 
 GPS DOP and active satellites parameters:
-- `mode` - Mode (M=manual, A=automatic)
-- `fix_type` - Fix type (1=no fix, 2=2D, 3=3D)
-- `satellite_ids` - Array of up to 12 satellite PRN numbers
-- `pdop` - Position Dilution of Precision
-- `hdop` - Horizontal Dilution of Precision
-- `vdop` - Vertical Dilution of Precision
+- `mode` - **Mandatory** - Mode (M=manual, A=automatic)
+- `fix_type` - **Mandatory** - Fix type (1=no fix, 2=2D, 3=3D)
+- `satellite_ids` - *Optional* - Array of up to 12 satellite PRN numbers
+- `pdop` - *Optional* - Position Dilution of Precision
+- `hdop` - *Optional* - Horizontal Dilution of Precision
+- `vdop` - *Optional* - Vertical Dilution of Precision
+
+**Note:** If any mandatory field is missing or cannot be parsed, `as_gsa()` returns `None`.
 
 #### `GsvData`
 
 GPS Satellites in view parameters:
-- `num_messages` - Total number of GSV messages
-- `message_num` - Current message number
-- `satellites_in_view` - Total number of satellites in view
-- `satellite_info` - Array of up to 4 satellite information structures
+- `num_messages` - **Mandatory** - Total number of GSV messages
+- `message_num` - **Mandatory** - Current message number
+- `satellites_in_view` - **Mandatory** - Total number of satellites in view
+- `satellite_info` - *Optional* - Array of up to 4 satellite information structures
 
 Each `SatelliteInfo` contains:
-- `prn` - Satellite PRN number
-- `elevation` - Elevation in degrees (0-90)
-- `azimuth` - Azimuth in degrees (0-359)
-- `snr` - Signal-to-Noise Ratio in dB
+- `prn` - *Optional* - Satellite PRN number
+- `elevation` - *Optional* - Elevation in degrees (0-90)
+- `azimuth` - *Optional* - Azimuth in degrees (0-359)
+- `snr` - *Optional* - Signal-to-Noise Ratio in dB
+
+**Note:** If any mandatory field is missing or cannot be parsed, `as_gsv()` returns `None`.
 
 #### `GllData`
 
 Geographic Position parameters:
-- `latitude` - Latitude value
-- `lat_direction` - N or S
-- `longitude` - Longitude value
-- `lon_direction` - E or W
-- `time` - UTC time (hhmmss format)
-- `status` - Status (A=active/valid, V=void/invalid)
+- `latitude` - **Mandatory** - Latitude value
+- `lat_direction` - **Mandatory** - N or S
+- `longitude` - **Mandatory** - Longitude value
+- `lon_direction` - **Mandatory** - E or W
+- `time` - **Mandatory** - UTC time (hhmmss format)
+- `status` - **Mandatory** - Status (A=active/valid, V=void/invalid)
+
+**Note:** If any mandatory field is missing or cannot be parsed, `as_gll()` returns `None`.
 
 #### `VtgData`
 
-Track Made Good and Ground Speed parameters:
-- `track_true` - True track angle
-- `track_true_indicator` - T (true)
-- `track_magnetic` - Magnetic track angle
-- `track_magnetic_indicator` - M (magnetic)
-- `speed_knots` - Speed in knots
-- `speed_knots_indicator` - N (knots)
-- `speed_kph` - Speed in kilometers per hour
-- `speed_kph_indicator` - K (km/h)
+Track Made Good and Ground Speed parameters (all fields are optional):
+- `track_true` - *Optional* - True track angle
+- `track_true_indicator` - *Optional* - T (true)
+- `track_magnetic` - *Optional* - Magnetic track angle
+- `track_magnetic_indicator` - *Optional* - M (magnetic)
+- `speed_knots` - *Optional* - Speed in knots
+- `speed_knots_indicator` - *Optional* - N (knots)
+- `speed_kph` - *Optional* - Speed in kilometers per hour
+- `speed_kph_indicator` - *Optional* - K (km/h)
+
+**Note:** VTG messages can be parsed even with all fields empty, as all fields are optional.
 
 ## Testing
 
