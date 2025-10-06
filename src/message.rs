@@ -8,10 +8,10 @@ use crate::types::*;
 
 // Message type implementations
 mod gga;
-mod rmc;
+mod gll;
 mod gsa;
 mod gsv;
-mod gll;
+mod rmc;
 mod vtg;
 
 /// Maximum number of fields in an NMEA sentence

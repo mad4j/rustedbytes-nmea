@@ -435,7 +435,7 @@ mod tests {
     #[test]
     fn test_gsv_multiple_message_sequence() {
         let mut parser = NmeaParser::new();
-        
+
         // First message of sequence
         let sentence1 = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
         let mut gsv1 = None;

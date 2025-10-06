@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn test_vtg_track_angle_ranges() {
         let mut parser = NmeaParser::new();
-        
+
         // Test 0 degrees
         let sentence = b"$GPVTG,0.0,T,0.0,M,5.5,N,10.2,K*48\r\n";
         let mut result = None;
@@ -333,7 +333,7 @@ mod tests {
         let vtg_data = vtg.unwrap();
         let knots = vtg_data.speed_knots.unwrap();
         let kph = vtg_data.speed_kph.unwrap();
-        
+
         // Verify the conversion is approximately correct
         let expected_kph = knots * 1.852;
         assert!((kph - expected_kph).abs() < 0.2);

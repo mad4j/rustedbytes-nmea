@@ -281,7 +281,8 @@ mod tests {
     #[test]
     fn test_gga_with_differential_data() {
         let mut parser = NmeaParser::new();
-        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,2,08,0.9,545.4,M,46.9,M,3.2,0120*47\r\n";
+        let sentence =
+            b"$GPGGA,123519,4807.038,N,01131.000,E,2,08,0.9,545.4,M,46.9,M,3.2,0120*47\r\n";
 
         let mut result = None;
         for &c in sentence.iter() {
