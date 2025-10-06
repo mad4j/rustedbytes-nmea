@@ -15,6 +15,7 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
   - VTG (Track Made Good and Ground Speed)
 - Message storage with timestamp tracking
 - Query last received message by type
+- Structured parameter extraction for each message type
 
 ## Usage
 
@@ -53,6 +54,15 @@ fn main() {
     // Query last received GGA message
     if let Some(last_gga) = parser.get_last_message(MessageType::GGA) {
         println!("Last GGA message timestamp: {}", last_gga.timestamp);
+        
+        // Extract structured parameters
+        if let Some(gga_data) = last_gga.as_gga() {
+            println!("Time: {:?}", gga_data.time);
+            println!("Latitude: {:?} {}", gga_data.latitude, gga_data.lat_direction.unwrap_or(""));
+            println!("Longitude: {:?} {}", gga_data.longitude, gga_data.lon_direction.unwrap_or(""));
+            println!("Altitude: {:?} {}", gga_data.altitude, gga_data.altitude_units.unwrap_or(""));
+            println!("Satellites: {:?}", gga_data.num_satellites);
+        }
     }
 }
 ```
@@ -116,6 +126,15 @@ Represents a parsed NMEA message.
 - `field_count: usize` - Number of fields in the message
 - `timestamp: u64` - Internal timestamp counter
 
+#### Methods
+
+- `as_gga() -> Option<GgaData>` - Extract GGA message parameters
+- `as_rmc() -> Option<RmcData>` - Extract RMC message parameters
+- `as_gsa() -> Option<GsaData>` - Extract GSA message parameters
+- `as_gsv() -> Option<GsvData>` - Extract GSV message parameters
+- `as_gll() -> Option<GllData>` - Extract GLL message parameters
+- `as_vtg() -> Option<VtgData>` - Extract VTG message parameters
+
 ### `MessageType`
 
 Enumeration of supported NMEA message types:
@@ -135,6 +154,89 @@ Represents a field value in an NMEA message.
 
 - `as_str() -> Option<&str>` - Get the field as a string slice
 - `as_bytes() -> &[u8]` - Get the field as a byte slice
+
+### Parameter Structures
+
+The library provides typed parameter structures for each NMEA message type, allowing structured access to message-specific fields.
+
+#### `GgaData`
+
+Global Positioning System Fix Data parameters:
+- `time` - UTC time (hhmmss format)
+- `latitude` - Latitude value
+- `lat_direction` - N or S
+- `longitude` - Longitude value
+- `lon_direction` - E or W
+- `fix_quality` - Fix quality (0=invalid, 1=GPS fix, 2=DGPS fix, etc.)
+- `num_satellites` - Number of satellites in use
+- `hdop` - Horizontal Dilution of Precision
+- `altitude` - Altitude above mean sea level
+- `altitude_units` - Units of altitude (M for meters)
+- `geoid_separation` - Height of geoid above WGS84 ellipsoid
+- `geoid_units` - Units of geoid separation
+- `age_of_diff` - Age of differential GPS data
+- `diff_station_id` - Differential reference station ID
+
+#### `RmcData`
+
+Recommended Minimum Navigation Information parameters:
+- `time` - UTC time (hhmmss format)
+- `status` - Status (A=active/valid, V=void/invalid)
+- `latitude` - Latitude value
+- `lat_direction` - N or S
+- `longitude` - Longitude value
+- `lon_direction` - E or W
+- `speed_knots` - Speed over ground in knots
+- `track_angle` - Track angle in degrees
+- `date` - Date (ddmmyy format)
+- `magnetic_variation` - Magnetic variation
+- `mag_var_direction` - E or W
+
+#### `GsaData`
+
+GPS DOP and active satellites parameters:
+- `mode` - Mode (M=manual, A=automatic)
+- `fix_type` - Fix type (1=no fix, 2=2D, 3=3D)
+- `satellite_ids` - Array of up to 12 satellite PRN numbers
+- `pdop` - Position Dilution of Precision
+- `hdop` - Horizontal Dilution of Precision
+- `vdop` - Vertical Dilution of Precision
+
+#### `GsvData`
+
+GPS Satellites in view parameters:
+- `num_messages` - Total number of GSV messages
+- `message_num` - Current message number
+- `satellites_in_view` - Total number of satellites in view
+- `satellite_info` - Array of up to 4 satellite information structures
+
+Each `SatelliteInfo` contains:
+- `prn` - Satellite PRN number
+- `elevation` - Elevation in degrees (0-90)
+- `azimuth` - Azimuth in degrees (0-359)
+- `snr` - Signal-to-Noise Ratio in dB
+
+#### `GllData`
+
+Geographic Position parameters:
+- `latitude` - Latitude value
+- `lat_direction` - N or S
+- `longitude` - Longitude value
+- `lon_direction` - E or W
+- `time` - UTC time (hhmmss format)
+- `status` - Status (A=active/valid, V=void/invalid)
+
+#### `VtgData`
+
+Track Made Good and Ground Speed parameters:
+- `track_true` - True track angle
+- `track_true_indicator` - T (true)
+- `track_magnetic` - Magnetic track angle
+- `track_magnetic_indicator` - M (magnetic)
+- `speed_knots` - Speed in knots
+- `speed_knots_indicator` - N (knots)
+- `speed_kph` - Speed in kilometers per hour
+- `speed_kph_indicator` - K (km/h)
 
 ## Testing
 
