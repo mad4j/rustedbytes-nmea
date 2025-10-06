@@ -18,6 +18,94 @@ pub enum MessageType {
     Unknown,
 }
 
+/// GGA - Global Positioning System Fix Data parameters
+#[derive(Debug, Clone)]
+pub struct GgaData<'a> {
+    pub time: Option<&'a str>,
+    pub latitude: Option<&'a str>,
+    pub lat_direction: Option<&'a str>,
+    pub longitude: Option<&'a str>,
+    pub lon_direction: Option<&'a str>,
+    pub fix_quality: Option<&'a str>,
+    pub num_satellites: Option<&'a str>,
+    pub hdop: Option<&'a str>,
+    pub altitude: Option<&'a str>,
+    pub altitude_units: Option<&'a str>,
+    pub geoid_separation: Option<&'a str>,
+    pub geoid_units: Option<&'a str>,
+    pub age_of_diff: Option<&'a str>,
+    pub diff_station_id: Option<&'a str>,
+}
+
+/// RMC - Recommended Minimum Navigation Information parameters
+#[derive(Debug, Clone)]
+pub struct RmcData<'a> {
+    pub time: Option<&'a str>,
+    pub status: Option<&'a str>,
+    pub latitude: Option<&'a str>,
+    pub lat_direction: Option<&'a str>,
+    pub longitude: Option<&'a str>,
+    pub lon_direction: Option<&'a str>,
+    pub speed_knots: Option<&'a str>,
+    pub track_angle: Option<&'a str>,
+    pub date: Option<&'a str>,
+    pub magnetic_variation: Option<&'a str>,
+    pub mag_var_direction: Option<&'a str>,
+}
+
+/// GSA - GPS DOP and active satellites parameters
+#[derive(Debug, Clone)]
+pub struct GsaData<'a> {
+    pub mode: Option<&'a str>,
+    pub fix_type: Option<&'a str>,
+    pub satellite_ids: [Option<&'a str>; 12],
+    pub pdop: Option<&'a str>,
+    pub hdop: Option<&'a str>,
+    pub vdop: Option<&'a str>,
+}
+
+/// GSV - GPS Satellites in view parameters
+#[derive(Debug, Clone)]
+pub struct GsvData<'a> {
+    pub num_messages: Option<&'a str>,
+    pub message_num: Option<&'a str>,
+    pub satellites_in_view: Option<&'a str>,
+    pub satellite_info: [Option<SatelliteInfo<'a>>; 4],
+}
+
+/// Information about a single satellite
+#[derive(Debug, Clone)]
+pub struct SatelliteInfo<'a> {
+    pub prn: Option<&'a str>,
+    pub elevation: Option<&'a str>,
+    pub azimuth: Option<&'a str>,
+    pub snr: Option<&'a str>,
+}
+
+/// GLL - Geographic Position parameters
+#[derive(Debug, Clone)]
+pub struct GllData<'a> {
+    pub latitude: Option<&'a str>,
+    pub lat_direction: Option<&'a str>,
+    pub longitude: Option<&'a str>,
+    pub lon_direction: Option<&'a str>,
+    pub time: Option<&'a str>,
+    pub status: Option<&'a str>,
+}
+
+/// VTG - Track Made Good and Ground Speed parameters
+#[derive(Debug, Clone)]
+pub struct VtgData<'a> {
+    pub track_true: Option<&'a str>,
+    pub track_true_indicator: Option<&'a str>,
+    pub track_magnetic: Option<&'a str>,
+    pub track_magnetic_indicator: Option<&'a str>,
+    pub speed_knots: Option<&'a str>,
+    pub speed_knots_indicator: Option<&'a str>,
+    pub speed_kph: Option<&'a str>,
+    pub speed_kph_indicator: Option<&'a str>,
+}
+
 /// Parsed NMEA message data
 #[derive(Debug, Clone)]
 pub struct NmeaMessage {
@@ -25,6 +113,183 @@ pub struct NmeaMessage {
     pub fields: [Option<Field>; MAX_FIELDS],
     pub field_count: usize,
     pub timestamp: u64,
+}
+
+impl NmeaMessage {
+    /// Extract GGA message parameters
+    pub fn as_gga(&self) -> Option<GgaData<'_>> {
+        if self.message_type != MessageType::GGA {
+            return None;
+        }
+        
+        Some(GgaData {
+            time: self.get_field_str(1),
+            latitude: self.get_field_str(2),
+            lat_direction: self.get_field_str(3),
+            longitude: self.get_field_str(4),
+            lon_direction: self.get_field_str(5),
+            fix_quality: self.get_field_str(6),
+            num_satellites: self.get_field_str(7),
+            hdop: self.get_field_str(8),
+            altitude: self.get_field_str(9),
+            altitude_units: self.get_field_str(10),
+            geoid_separation: self.get_field_str(11),
+            geoid_units: self.get_field_str(12),
+            age_of_diff: self.get_field_str(13),
+            diff_station_id: self.get_field_str(14),
+        })
+    }
+    
+    /// Extract RMC message parameters
+    pub fn as_rmc(&self) -> Option<RmcData<'_>> {
+        if self.message_type != MessageType::RMC {
+            return None;
+        }
+        
+        Some(RmcData {
+            time: self.get_field_str(1),
+            status: self.get_field_str(2),
+            latitude: self.get_field_str(3),
+            lat_direction: self.get_field_str(4),
+            longitude: self.get_field_str(5),
+            lon_direction: self.get_field_str(6),
+            speed_knots: self.get_field_str(7),
+            track_angle: self.get_field_str(8),
+            date: self.get_field_str(9),
+            magnetic_variation: self.get_field_str(10),
+            mag_var_direction: self.get_field_str(11),
+        })
+    }
+    
+    /// Extract GSA message parameters
+    pub fn as_gsa(&self) -> Option<GsaData<'_>> {
+        if self.message_type != MessageType::GSA {
+            return None;
+        }
+        
+        Some(GsaData {
+            mode: self.get_field_str(1),
+            fix_type: self.get_field_str(2),
+            satellite_ids: [
+                self.get_field_str(3),
+                self.get_field_str(4),
+                self.get_field_str(5),
+                self.get_field_str(6),
+                self.get_field_str(7),
+                self.get_field_str(8),
+                self.get_field_str(9),
+                self.get_field_str(10),
+                self.get_field_str(11),
+                self.get_field_str(12),
+                self.get_field_str(13),
+                self.get_field_str(14),
+            ],
+            pdop: self.get_field_str(15),
+            hdop: self.get_field_str(16),
+            vdop: self.get_field_str(17),
+        })
+    }
+    
+    /// Extract GSV message parameters
+    pub fn as_gsv(&self) -> Option<GsvData<'_>> {
+        if self.message_type != MessageType::GSV {
+            return None;
+        }
+        
+        let sat1 = if self.get_field_str(4).is_some() {
+            Some(SatelliteInfo {
+                prn: self.get_field_str(4),
+                elevation: self.get_field_str(5),
+                azimuth: self.get_field_str(6),
+                snr: self.get_field_str(7),
+            })
+        } else {
+            None
+        };
+        
+        let sat2 = if self.get_field_str(8).is_some() {
+            Some(SatelliteInfo {
+                prn: self.get_field_str(8),
+                elevation: self.get_field_str(9),
+                azimuth: self.get_field_str(10),
+                snr: self.get_field_str(11),
+            })
+        } else {
+            None
+        };
+        
+        let sat3 = if self.get_field_str(12).is_some() {
+            Some(SatelliteInfo {
+                prn: self.get_field_str(12),
+                elevation: self.get_field_str(13),
+                azimuth: self.get_field_str(14),
+                snr: self.get_field_str(15),
+            })
+        } else {
+            None
+        };
+        
+        let sat4 = if self.get_field_str(16).is_some() {
+            Some(SatelliteInfo {
+                prn: self.get_field_str(16),
+                elevation: self.get_field_str(17),
+                azimuth: self.get_field_str(18),
+                snr: self.get_field_str(19),
+            })
+        } else {
+            None
+        };
+        
+        Some(GsvData {
+            num_messages: self.get_field_str(1),
+            message_num: self.get_field_str(2),
+            satellites_in_view: self.get_field_str(3),
+            satellite_info: [sat1, sat2, sat3, sat4],
+        })
+    }
+    
+    /// Extract GLL message parameters
+    pub fn as_gll(&self) -> Option<GllData<'_>> {
+        if self.message_type != MessageType::GLL {
+            return None;
+        }
+        
+        Some(GllData {
+            latitude: self.get_field_str(1),
+            lat_direction: self.get_field_str(2),
+            longitude: self.get_field_str(3),
+            lon_direction: self.get_field_str(4),
+            time: self.get_field_str(5),
+            status: self.get_field_str(6),
+        })
+    }
+    
+    /// Extract VTG message parameters
+    pub fn as_vtg(&self) -> Option<VtgData<'_>> {
+        if self.message_type != MessageType::VTG {
+            return None;
+        }
+        
+        Some(VtgData {
+            track_true: self.get_field_str(1),
+            track_true_indicator: self.get_field_str(2),
+            track_magnetic: self.get_field_str(3),
+            track_magnetic_indicator: self.get_field_str(4),
+            speed_knots: self.get_field_str(5),
+            speed_knots_indicator: self.get_field_str(6),
+            speed_kph: self.get_field_str(7),
+            speed_kph_indicator: self.get_field_str(8),
+        })
+    }
+    
+    /// Helper to get a field as a string slice
+    fn get_field_str(&self, index: usize) -> Option<&str> {
+        if index < self.field_count {
+            self.fields[index].as_ref()?.as_str()
+        } else {
+            None
+        }
+    }
 }
 
 /// Represents a field value in an NMEA message
@@ -512,5 +777,201 @@ mod tests {
 
         let second_msg = parser.get_last_message(MessageType::GGA);
         assert_eq!(second_msg.unwrap().timestamp, 2);
+    }
+
+    #[test]
+    fn test_gga_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
+        
+        let gga_data = gga.unwrap();
+        assert_eq!(gga_data.time, Some("123519"));
+        assert_eq!(gga_data.latitude, Some("4807.038"));
+        assert_eq!(gga_data.lat_direction, Some("N"));
+        assert_eq!(gga_data.longitude, Some("01131.000"));
+        assert_eq!(gga_data.lon_direction, Some("E"));
+        assert_eq!(gga_data.fix_quality, Some("1"));
+        assert_eq!(gga_data.num_satellites, Some("08"));
+        assert_eq!(gga_data.hdop, Some("0.9"));
+        assert_eq!(gga_data.altitude, Some("545.4"));
+        assert_eq!(gga_data.altitude_units, Some("M"));
+    }
+
+    #[test]
+    fn test_rmc_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let rmc = msg.as_rmc();
+        assert!(rmc.is_some());
+        
+        let rmc_data = rmc.unwrap();
+        assert_eq!(rmc_data.time, Some("123519"));
+        assert_eq!(rmc_data.status, Some("A"));
+        assert_eq!(rmc_data.latitude, Some("4807.038"));
+        assert_eq!(rmc_data.lat_direction, Some("N"));
+        assert_eq!(rmc_data.longitude, Some("01131.000"));
+        assert_eq!(rmc_data.lon_direction, Some("E"));
+        assert_eq!(rmc_data.speed_knots, Some("022.4"));
+        assert_eq!(rmc_data.track_angle, Some("084.4"));
+        assert_eq!(rmc_data.date, Some("230394"));
+    }
+
+    #[test]
+    fn test_gsa_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsa = msg.as_gsa();
+        assert!(gsa.is_some());
+        
+        let gsa_data = gsa.unwrap();
+        assert_eq!(gsa_data.mode, Some("A"));
+        assert_eq!(gsa_data.fix_type, Some("3"));
+        assert_eq!(gsa_data.satellite_ids[0], Some("04"));
+        assert_eq!(gsa_data.satellite_ids[1], Some("05"));
+        assert_eq!(gsa_data.satellite_ids[3], Some("09"));
+        assert_eq!(gsa_data.pdop, Some("2.5"));
+        assert_eq!(gsa_data.hdop, Some("1.3"));
+        assert_eq!(gsa_data.vdop, Some("2.1"));
+    }
+
+    #[test]
+    fn test_gsv_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gsv = msg.as_gsv();
+        assert!(gsv.is_some());
+        
+        let gsv_data = gsv.unwrap();
+        assert_eq!(gsv_data.num_messages, Some("2"));
+        assert_eq!(gsv_data.message_num, Some("1"));
+        assert_eq!(gsv_data.satellites_in_view, Some("08"));
+        
+        // Check first satellite
+        assert!(gsv_data.satellite_info[0].is_some());
+        let sat1 = gsv_data.satellite_info[0].as_ref().unwrap();
+        assert_eq!(sat1.prn, Some("01"));
+        assert_eq!(sat1.elevation, Some("40"));
+        assert_eq!(sat1.azimuth, Some("083"));
+        assert_eq!(sat1.snr, Some("46"));
+    }
+
+    #[test]
+    fn test_gll_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let gll = msg.as_gll();
+        assert!(gll.is_some());
+        
+        let gll_data = gll.unwrap();
+        assert_eq!(gll_data.latitude, Some("4916.45"));
+        assert_eq!(gll_data.lat_direction, Some("N"));
+        assert_eq!(gll_data.longitude, Some("12311.12"));
+        assert_eq!(gll_data.lon_direction, Some("W"));
+        assert_eq!(gll_data.time, Some("225444"));
+        assert_eq!(gll_data.status, Some("A"));
+    }
+
+    #[test]
+    fn test_vtg_parameters() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        let vtg = msg.as_vtg();
+        assert!(vtg.is_some());
+        
+        let vtg_data = vtg.unwrap();
+        assert_eq!(vtg_data.track_true, Some("054.7"));
+        assert_eq!(vtg_data.track_true_indicator, Some("T"));
+        assert_eq!(vtg_data.track_magnetic, Some("034.4"));
+        assert_eq!(vtg_data.track_magnetic_indicator, Some("M"));
+        assert_eq!(vtg_data.speed_knots, Some("005.5"));
+        assert_eq!(vtg_data.speed_knots_indicator, Some("N"));
+        assert_eq!(vtg_data.speed_kph, Some("010.2"));
+        assert_eq!(vtg_data.speed_kph_indicator, Some("K"));
+    }
+
+    #[test]
+    fn test_wrong_message_type_extraction() {
+        let mut parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let mut result = None;
+        for &c in sentence.iter() {
+            if let Some(msg) = parser.parse_char(c) {
+                result = Some(msg);
+            }
+        }
+
+        assert!(result.is_some());
+        let msg = result.unwrap();
+        
+        // Try to extract RMC data from a GGA message
+        let rmc = msg.as_rmc();
+        assert!(rmc.is_none());
+        
+        // GGA extraction should work
+        let gga = msg.as_gga();
+        assert!(gga.is_some());
     }
 }
