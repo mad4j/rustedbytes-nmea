@@ -2,5 +2,12 @@
 name = "rustedbytes-nmea"
 version = "0.1.0"
 edition = "2021"
+authors = ["Daniele Olmisani"]
+description = "Rust no_std library for parsing NMEA messages from a GNSS receiver"
+license = "MIT"
+repository = "https://github.com/mad4j/rustedbytes-nmea"
+readme = "README.md"
+keywords = ["nmea", "gps", "gnss", "no_std", "embedded"]
+categories = ["embedded", "no-std", "parsing"]
 
 [dependencies]
