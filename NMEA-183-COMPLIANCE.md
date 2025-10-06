@@ -6,6 +6,24 @@ This document describes the compliance of the `rustedbytes-nmea` library with th
 
 The library implements a subset of the NMEA 0183 standard, focusing on the most commonly used GPS/GNSS message types. The implementation follows the `no_std` design principle for embedded systems compatibility.
 
+## Multiconstellation Support
+
+The library supports NMEA messages from multiple GNSS constellations through the **Talker ID** field. Each parsed message includes a `talker_id` field that indicates which constellation provided the data.
+
+### Supported Talker IDs
+
+| Talker ID | Constellation | Description |
+|-----------|---------------|-------------|
+| **GP** | GPS | Global Positioning System (USA) |
+| **GL** | GLONASS | Russian Global Navigation Satellite System |
+| **GA** | Galileo | European Global Navigation Satellite System |
+| **GB** | BeiDou | Chinese Navigation Satellite System (GBxxxx format) |
+| **BD** | BeiDou | Chinese Navigation Satellite System (BDxxxx format) |
+| **GN** | Multi-GNSS | Combined data from multiple constellation systems |
+| **QZ** | QZSS | Japanese Quasi-Zenith Satellite System |
+
+All message types (GGA, RMC, GSA, GSV, GLL, VTG) automatically track and report their source constellation through the `talker_id` field in their respective data structures.
+
 ## Supported Message Types
 
 | Message Type | Description | Implementation Status | Notes |
@@ -91,6 +109,7 @@ The following NMEA 0183 message types are **not currently supported**:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | UTC Time | ✅ Mandatory | `&str` |
 | 2 | Latitude | ✅ Mandatory | `f64` |
 | 3 | N/S Indicator | ✅ Mandatory | `char` |
@@ -110,6 +129,7 @@ The following NMEA 0183 message types are **not currently supported**:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | UTC Time | ✅ Mandatory | `&str` |
 | 2 | Status | ✅ Mandatory | `char` |
 | 3 | Latitude | ✅ Mandatory | `f64` |
@@ -127,6 +147,7 @@ The following NMEA 0183 message types are **not currently supported**:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | Mode (M/A) | ✅ Mandatory | `char` |
 | 2 | Fix Type | ✅ Mandatory | `u8` |
 | 3-14 | Satellite IDs | ✅ Optional | `[Option<u8>; 12]` |
@@ -138,6 +159,7 @@ The following NMEA 0183 message types are **not currently supported**:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | Number of Messages | ✅ Mandatory | `u8` |
 | 2 | Message Number | ✅ Mandatory | `u8` |
 | 3 | Satellites in View | ✅ Mandatory | `u8` |
@@ -156,6 +178,7 @@ Each `SatelliteInfo` contains:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | Latitude | ✅ Mandatory | `f64` |
 | 2 | N/S Indicator | ✅ Mandatory | `char` |
 | 3 | Longitude | ✅ Mandatory | `f64` |
@@ -168,6 +191,7 @@ Each `SatelliteInfo` contains:
 
 | Field | Description | Status | Type |
 |-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
 | 1 | Track True | ✅ Optional | `Option<f32>` |
 | 2 | T Indicator | ✅ Optional | `Option<char>` |
 | 3 | Track Magnetic | ✅ Optional | `Option<f32>` |
