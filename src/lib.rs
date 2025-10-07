@@ -294,7 +294,7 @@ mod tests {
         assert!(gga.is_some());
 
         let gga_data = gga.unwrap();
-        assert_eq!(gga_data.time, "123519");
+        assert_eq!(gga_data.time(), "123519");
         assert_eq!(gga_data.latitude, 4807.038);
         assert_eq!(gga_data.lat_direction, 'N');
         assert_eq!(gga_data.longitude, 1131.000);
@@ -324,7 +324,7 @@ mod tests {
         assert!(rmc.is_some());
 
         let rmc_data = rmc.unwrap();
-        assert_eq!(rmc_data.time, "123519");
+        assert_eq!(rmc_data.time(), "123519");
         assert_eq!(rmc_data.status, 'A');
         assert_eq!(rmc_data.latitude, 4807.038);
         assert_eq!(rmc_data.lat_direction, 'N');
@@ -332,7 +332,7 @@ mod tests {
         assert_eq!(rmc_data.lon_direction, 'E');
         assert_eq!(rmc_data.speed_knots, 22.4);
         assert_eq!(rmc_data.track_angle, 84.4);
-        assert_eq!(rmc_data.date, "230394");
+        assert_eq!(rmc_data.date(), "230394");
     }
 
     #[test]
@@ -416,7 +416,7 @@ mod tests {
         assert_eq!(gll_data.lat_direction, 'N');
         assert_eq!(gll_data.longitude, 12311.12);
         assert_eq!(gll_data.lon_direction, 'W');
-        assert_eq!(gll_data.time, "225444");
+        assert_eq!(gll_data.time(), "225444");
         assert_eq!(gll_data.status, 'A');
     }
 

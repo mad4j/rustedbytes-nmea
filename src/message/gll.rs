@@ -43,14 +43,22 @@ use crate::types::{MessageType, TalkerId};
 
 /// GLL - Geographic Position parameters
 #[derive(Debug, Clone)]
-pub struct GllData<'a> {
+pub struct GllData {
     pub talker_id: TalkerId,
     pub latitude: f64,
     pub lat_direction: char,
     pub longitude: f64,
     pub lon_direction: char,
-    pub time: &'a str,
+    time_data: [u8; 16],
+    time_len: u8,
     pub status: char,
+}
+
+impl GllData {
+    /// Get time as string slice
+    pub fn time(&self) -> &str {
+        core::str::from_utf8(&self.time_data[..self.time_len as usize]).unwrap_or("")
+    }
 }
 
 impl NmeaMessage {
@@ -93,7 +101,7 @@ impl NmeaMessage {
     ///     }
     /// }
     /// ```
-    pub fn as_gll(&self) -> Option<GllData<'_>> {
+    pub fn as_gll(&self) -> Option<GllData> {
         if self.message_type != MessageType::GLL {
             return None;
         }
@@ -103,8 +111,14 @@ impl NmeaMessage {
         let lat_direction = self.parse_field_char(2)?;
         let longitude = self.parse_field_f64(3)?;
         let lon_direction = self.parse_field_char(4)?;
-        let time = self.get_field_str(5)?;
+        let time_str = self.get_field_str(5)?;
         let status = self.parse_field_char(6)?;
+
+        // Copy time to fixed array
+        let mut time_data = [0u8; 16];
+        let time_bytes = time_str.as_bytes();
+        let time_len = time_bytes.len().min(16) as u8;
+        time_data[..time_len as usize].copy_from_slice(&time_bytes[..time_len as usize]);
 
         Some(GllData {
             talker_id: self.talker_id,
@@ -112,7 +126,8 @@ impl NmeaMessage {
             lat_direction,
             longitude,
             lon_direction,
-            time,
+            time_data,
+            time_len,
             status,
         })
     }
@@ -144,7 +159,7 @@ mod tests {
         assert_eq!(gll_data.lat_direction, 'N');
         assert_eq!(gll_data.longitude, 12311.12);
         assert_eq!(gll_data.lon_direction, 'W');
-        assert_eq!(gll_data.time, "225444");
+        assert_eq!(gll_data.time(), "225444");
         assert_eq!(gll_data.status, 'A');
     }
 
@@ -396,6 +411,6 @@ mod tests {
         assert!(gll.is_some());
 
         let gll_data = gll.unwrap();
-        assert_eq!(gll_data.time, "225444.50");
+        assert_eq!(gll_data.time(), "225444.50");
     }
 }
