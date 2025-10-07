@@ -12,7 +12,8 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 ## Features
 
 - `no_std` compatible - can be used in embedded systems
-- Character stream parsing - feed characters one at a time
+- **Stateless parser** - no internal buffers or state retention
+- **Multi-byte parsing** - parse multiple bytes at once with bytes consumed tracking
 - **Multiconstellation support** - tracks which GNSS constellation provided each message
   - GPS (GP), GLONASS (GL), Galileo (GA), BeiDou (GB/BD), Multi-GNSS (GN), QZSS (QZ)
 - Supports common NMEA message types:
@@ -22,8 +23,7 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
   - GSV (GPS Satellites in view)
   - GLL (Geographic Position - Latitude/Longitude)
   - VTG (Track Made Good and Ground Speed)
-- Message storage with timestamp tracking
-- Query last received message by type
+- Handles spurious characters between messages
 - Structured parameter extraction for each message type
 
 ## Usage
@@ -38,18 +38,20 @@ rustedbytes-nmea = "0.1.0"
 ### Basic Example
 
 ```rust
-use rustedbytes_nmea::{NmeaParser, MessageType, NmeaMessage};
+use rustedbytes_nmea::{NmeaParser, MessageType, NmeaMessage, ParseError};
 
 fn main() {
-    let mut parser = NmeaParser::new();
+    let parser = NmeaParser::new();
     
-    // NMEA sentence as bytes
-    let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+    // NMEA sentence as bytes (can contain multiple messages or partial data)
+    let data = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
     
-    // Parse character by character
-    for &byte in sentence.iter() {
-        if let Some(message) = parser.parse_char(byte) {
-            // Message is directly the parsed data
+    // Parse the data
+    let (result, bytes_consumed) = parser.parse_bytes(data);
+    
+    match result {
+        Ok(Some(message)) => {
+            // Successfully parsed a complete message
             match message {
                 NmeaMessage::GGA(gga_data) => {
                     println!("GGA message from {:?}", gga_data.talker_id);
@@ -67,19 +69,19 @@ fn main() {
                 }
                 _ => {} // Handle other message types
             }
+            println!("Consumed {} bytes", bytes_consumed);
         }
-    }
-    
-    // Query last received GGA message
-    if let Some(last_gga) = parser.get_last_message(MessageType::GGA) {
-        // Use convenience method to extract GGA data
-        if let Some(gga_data) = last_gga.as_gga() {
-            println!("Time: {}", gga_data.time());
-            println!("Constellation: {:?}", gga_data.talker_id);
-            println!("Latitude: {} {}", gga_data.latitude, gga_data.lat_direction);
-            println!("Longitude: {} {}", gga_data.longitude, gga_data.lon_direction);
-            println!("Altitude: {:?} {:?}", gga_data.altitude, gga_data.altitude_units);
-            println!("Satellites: {:?}", gga_data.num_satellites);
+        Ok(None) => {
+            // Partial message or spurious data - need more bytes
+            println!("Partial message, consumed {} bytes", bytes_consumed);
+        }
+        Err(ParseError::InvalidMessage) => {
+            // Complete but invalid message (e.g., missing mandatory fields)
+            println!("Invalid message found, consumed {} bytes", bytes_consumed);
+        }
+        Err(ParseError::InvalidChecksum) => {
+            // Checksum verification failed
+            println!("Invalid checksum, consumed {} bytes", bytes_consumed);
         }
     }
 }
@@ -91,30 +93,37 @@ fn main() {
 use rustedbytes_nmea::{NmeaParser, MessageType};
 
 fn main() {
-    let mut parser = NmeaParser::new();
+    let parser = NmeaParser::new();
     
     // Simulate a stream of multiple NMEA sentences
-    let stream = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n\
-                   $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n\
-                   $GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+    let mut data = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n\
+                     $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n\
+                     $GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n".as_slice();
     
-    for &byte in stream.iter() {
-        if let Some(message) = parser.parse_char(byte) {
-            println!("Parsed {:?} message", message.message_type());
+    // Parse all messages in the stream
+    while !data.is_empty() {
+        let (result, consumed) = parser.parse_bytes(data);
+        
+        if consumed == 0 {
+            // Partial message - would need more data in a real stream
+            break;
         }
-    }
-    
-    // Retrieve last messages of each type
-    if let Some(gga) = parser.get_last_message(MessageType::GGA) {
-        println!("Last GGA at timestamp: {}", gga.timestamp);
-    }
-    
-    if let Some(rmc) = parser.get_last_message(MessageType::RMC) {
-        println!("Last RMC at timestamp: {}", rmc.timestamp);
-    }
-    
-    if let Some(gsa) = parser.get_last_message(MessageType::GSA) {
-        println!("Last GSA at timestamp: {}", gsa.timestamp);
+        
+        match result {
+            Ok(Some(message)) => {
+                println!("Parsed {:?} message", message.message_type());
+            }
+            Ok(None) => {
+                // Spurious data consumed
+                println!("Consumed {} bytes of spurious data", consumed);
+            }
+            Err(e) => {
+                println!("Parse error: {:?}", e);
+            }
+        }
+        
+        // Move to next message
+        data = &data[consumed..];
     }
 }
 ```
@@ -127,7 +136,7 @@ The library automatically tracks which GNSS constellation provided each message 
 use rustedbytes_nmea::{NmeaParser, TalkerId};
 
 fn main() {
-    let mut parser = NmeaParser::new();
+    let parser = NmeaParser::new();
     
     // Parse messages from different constellations
     let sentences = [
@@ -138,16 +147,15 @@ fn main() {
     ];
     
     for sentence in &sentences {
-        for &byte in sentence.iter() {
-            if let Some(message) = parser.parse_char(byte) {
-                if let Some(gga_data) = message.as_gga() {
-                    match gga_data.talker_id {
-                        TalkerId::GP => println!("GPS fix: {}", gga_data.time),
-                        TalkerId::GL => println!("GLONASS fix: {}", gga_data.time),
-                        TalkerId::GA => println!("Galileo fix: {}", gga_data.time),
-                        TalkerId::GN => println!("Multi-GNSS fix: {}", gga_data.time),
-                        _ => println!("Other constellation fix"),
-                    }
+        let (result, _) = parser.parse_bytes(sentence);
+        if let Ok(Some(message)) = result {
+            if let Some(gga_data) = message.as_gga() {
+                match gga_data.talker_id {
+                    TalkerId::GP => println!("GPS fix: {}", gga_data.time()),
+                    TalkerId::GL => println!("GLONASS fix: {}", gga_data.time()),
+                    TalkerId::GA => println!("Galileo fix: {}", gga_data.time()),
+                    TalkerId::GN => println!("Multi-GNSS fix: {}", gga_data.time()),
+                    _ => println!("Other constellation fix"),
                 }
             }
         }
@@ -172,14 +180,24 @@ fn main() {
 
 ### `NmeaParser`
 
-The main parser structure.
+The main parser structure. **The parser is now stateless** - it maintains no internal buffers or message storage.
 
 #### Methods
 
 - `new()` - Create a new parser instance
-- `parse_char(c: u8) -> Option<NmeaMessage>` - Parse a single character. Returns `Some(NmeaMessage)` when a complete message is parsed.
-- `get_last_message(msg_type: MessageType) -> Option<&NmeaMessage>` - Get the last received message of a specific type
-- `reset()` - Reset the parser state
+- `parse_bytes(data: &[u8]) -> (Result<Option<NmeaMessage>, ParseError>, usize)` - Parse bytes and return:
+  - `Ok(Some(message))` - Successfully parsed a complete, valid message
+  - `Ok(None)` - Partial message (need more data) or consumed spurious characters
+  - `Err(ParseError::InvalidMessage)` - Complete message but missing mandatory fields
+  - `Err(ParseError::InvalidChecksum)` - Checksum verification failed
+  - Returns the number of bytes consumed from the input
+
+### `ParseError`
+
+Error types returned when parsing fails:
+
+- `InvalidMessage` - Message is syntactically complete but missing mandatory fields or invalid
+- `InvalidChecksum` - Checksum verification failed (not yet fully implemented)
 
 ### `NmeaMessage`
 

@@ -106,16 +106,15 @@ impl ParsedSentence {
     /// ```
     /// use rustedbytes_nmea::{NmeaParser, MessageType};
     ///
-    /// let mut parser = NmeaParser::new();
+    /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
     ///
-    /// for &c in sentence.iter() {
-    ///     if let Some(msg) = parser.parse_char(c) {
-    ///         if let Some(gsv) = msg.as_gsv() {
-    ///             assert_eq!(gsv.num_messages, 2);
-    ///             assert_eq!(gsv.satellites_in_view, 8);
-    ///             assert!(gsv.satellite_info[0].is_some());
-    ///         }
+    /// let (result, _consumed) = parser.parse_bytes(sentence);
+    /// if let Ok(Some(msg)) = result {
+    ///     if let Some(gsv) = msg.as_gsv() {
+    ///         assert_eq!(gsv.num_messages, 2);
+    ///         assert_eq!(gsv.satellites_in_view, 8);
+    ///         assert!(gsv.satellite_info[0].is_some());
     ///     }
     /// }
     /// ```
@@ -189,15 +188,10 @@ mod tests {
 
     #[test]
     fn test_gsv_complete_message() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -228,15 +222,10 @@ mod tests {
 
     #[test]
     fn test_gsv_partial_satellites() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,1,1,02,01,40,083,46,02,17,308,*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -264,15 +253,10 @@ mod tests {
 
     #[test]
     fn test_gsv_single_satellite() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,1,1,01,01,40,083,46*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -287,15 +271,10 @@ mod tests {
 
     #[test]
     fn test_gsv_missing_num_messages() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -303,15 +282,10 @@ mod tests {
 
     #[test]
     fn test_gsv_missing_message_num() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,2,,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -319,15 +293,10 @@ mod tests {
 
     #[test]
     fn test_gsv_missing_satellites_in_view() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,2,1,,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -335,16 +304,11 @@ mod tests {
 
     #[test]
     fn test_gsv_satellite_partial_info() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // Satellite with PRN but missing other fields
         let sentence = b"$GPGSV,1,1,01,01,,,*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -362,15 +326,10 @@ mod tests {
 
     #[test]
     fn test_gsv_zero_elevation_azimuth() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,1,1,01,01,0,0,46*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -385,15 +344,10 @@ mod tests {
 
     #[test]
     fn test_gsv_max_elevation() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,1,1,01,01,90,180,46*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -407,15 +361,10 @@ mod tests {
 
     #[test]
     fn test_gsv_max_azimuth() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSV,1,1,01,01,45,359,46*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -429,16 +378,11 @@ mod tests {
 
     #[test]
     fn test_gsv_different_talker_id() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // GNGSV is multi-GNSS
         let sentence = b"$GNGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -451,16 +395,11 @@ mod tests {
 
     #[test]
     fn test_gsv_satellites_from_different_constellations() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         
         // Test GPS satellites
         let gp_sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-        let mut gp_result = None;
-        for &c in gp_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gp_result = Some(msg);
-            }
-        }
+        let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_gsv = gp_msg.as_gsv().unwrap();
@@ -469,12 +408,7 @@ mod tests {
         
         // Test GLONASS satellites
         let gl_sentence = b"$GLGSV,2,1,08,65,40,083,46,66,17,308,41,75,07,344,39,76,22,228,45*75\r\n";
-        let mut gl_result = None;
-        for &c in gl_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gl_result = Some(msg);
-            }
-        }
+        let gl_result = parser.parse_sentence_complete(gl_sentence);
         assert!(gl_result.is_some());
         let gl_msg = gl_result.unwrap();
         let gl_gsv = gl_msg.as_gsv().unwrap();
@@ -482,12 +416,7 @@ mod tests {
         
         // Test Galileo satellites
         let ga_sentence = b"$GAGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-        let mut ga_result = None;
-        for &c in ga_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                ga_result = Some(msg);
-            }
-        }
+        let ga_result = parser.parse_sentence_complete(ga_sentence);
         assert!(ga_result.is_some());
         let ga_msg = ga_result.unwrap();
         let ga_gsv = ga_msg.as_gsv().unwrap();
@@ -496,16 +425,11 @@ mod tests {
 
     #[test]
     fn test_gsv_multiple_message_sequence() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
 
         // First message of sequence
         let sentence1 = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-        let mut result1 = None;
-        for &c in sentence1.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result1 = Some(msg);
-            }
-        }
+        let result1 = parser.parse_sentence_complete(sentence1);
         assert!(result1.is_some());
         let msg1 = result1.unwrap();
         let gsv1_data = msg1.as_gsv().unwrap();
@@ -514,12 +438,7 @@ mod tests {
 
         // Second message of sequence
         let sentence2 = b"$GPGSV,2,2,08,20,35,073,44,21,25,210,42,25,15,120,40,32,10,045,38*75\r\n";
-        let mut result2 = None;
-        for &c in sentence2.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result2 = Some(msg);
-            }
-        }
+        let result2 = parser.parse_sentence_complete(sentence2);
         assert!(result2.is_some());
         let msg2 = result2.unwrap();
         let gsv2_data = msg2.as_gsv().unwrap();

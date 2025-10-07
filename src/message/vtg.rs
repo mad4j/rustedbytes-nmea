@@ -100,15 +100,14 @@ impl ParsedSentence {
     /// ```
     /// use rustedbytes_nmea::{NmeaParser, MessageType};
     ///
-    /// let mut parser = NmeaParser::new();
+    /// let parser = NmeaParser::new();
     /// let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
     ///
-    /// for &c in sentence.iter() {
-    ///     if let Some(msg) = parser.parse_char(c) {
-    ///         if let Some(vtg) = msg.as_vtg() {
-    ///             assert_eq!(vtg.track_true, Some(54.7));
-    ///             assert_eq!(vtg.speed_knots, Some(5.5));
-    ///         }
+    /// let (result, _consumed) = parser.parse_bytes(sentence);
+    /// if let Ok(Some(msg)) = result {
+    ///     if let Some(vtg) = msg.as_vtg() {
+    ///         assert_eq!(vtg.track_true, Some(54.7));
+    ///         assert_eq!(vtg.speed_knots, Some(5.5));
     ///     }
     /// }
     /// ```
@@ -137,15 +136,10 @@ mod tests {
 
     #[test]
     fn test_vtg_complete_message() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -165,15 +159,10 @@ mod tests {
 
     #[test]
     fn test_vtg_with_empty_fields() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,,T,,M,,N,,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -189,15 +178,10 @@ mod tests {
 
     #[test]
     fn test_vtg_zero_speed() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,0.0,T,0.0,M,0.0,N,0.0,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -211,15 +195,10 @@ mod tests {
 
     #[test]
     fn test_vtg_high_speed() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,270.5,T,250.3,M,125.8,N,233.0,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -233,15 +212,10 @@ mod tests {
 
     #[test]
     fn test_vtg_only_true_track() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,054.7,T,,M,,N,,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -255,15 +229,10 @@ mod tests {
 
     #[test]
     fn test_vtg_only_knots() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,,T,,M,5.5,N,,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -277,15 +246,10 @@ mod tests {
 
     #[test]
     fn test_vtg_only_kph() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,,T,,M,,N,10.2,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -299,16 +263,11 @@ mod tests {
 
     #[test]
     fn test_vtg_track_angle_ranges() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
 
         // Test 0 degrees
         let sentence = b"$GPVTG,0.0,T,0.0,M,5.5,N,10.2,K*48\r\n";
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
         assert!(result.is_some());
         let msg = result.unwrap();
         let vtg = msg.as_vtg().unwrap();
@@ -316,12 +275,7 @@ mod tests {
 
         // Test 359.9 degrees
         let sentence = b"$GPVTG,359.9,T,359.9,M,5.5,N,10.2,K*48\r\n";
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
         assert!(result.is_some());
         let msg = result.unwrap();
         let vtg = msg.as_vtg().unwrap();
@@ -330,17 +284,12 @@ mod tests {
 
     #[test]
     fn test_vtg_speed_conversion_accuracy() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // 1 knot = 1.852 km/h
         // 5.5 knots = 10.186 km/h (rounded to 10.2)
         let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -358,15 +307,10 @@ mod tests {
 
     #[test]
     fn test_vtg_numeric_precision() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -382,16 +326,11 @@ mod tests {
 
     #[test]
     fn test_vtg_different_talker_id() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // GNVTG is multi-GNSS
         let sentence = b"$GNVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -404,16 +343,11 @@ mod tests {
 
     #[test]
     fn test_vtg_mixed_constellation_data() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         
         // Test GPS
         let gp_sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
-        let mut gp_result = None;
-        for &c in gp_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gp_result = Some(msg);
-            }
-        }
+        let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_vtg = gp_msg.as_vtg().unwrap();
@@ -422,12 +356,7 @@ mod tests {
         
         // Test GLONASS
         let gl_sentence = b"$GLVTG,154.7,T,134.4,M,015.5,N,028.7,K*48\r\n";
-        let mut gl_result = None;
-        for &c in gl_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gl_result = Some(msg);
-            }
-        }
+        let gl_result = parser.parse_sentence_complete(gl_sentence);
         assert!(gl_result.is_some());
         let gl_msg = gl_result.unwrap();
         let gl_vtg = gl_msg.as_vtg().unwrap();
@@ -437,15 +366,10 @@ mod tests {
 
     #[test]
     fn test_vtg_easterly_heading() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,090.0,T,085.0,M,10.0,N,18.5,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -458,15 +382,10 @@ mod tests {
 
     #[test]
     fn test_vtg_westerly_heading() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPVTG,270.0,T,265.0,M,10.0,N,18.5,K*48\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();

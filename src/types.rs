@@ -2,6 +2,15 @@
 
 use crate::message::{GgaData, GllData, GsaData, GsvData, RmcData, VtgData};
 
+/// Parse error types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParseError {
+    /// Checksum verification failed
+    InvalidChecksum,
+    /// Message is syntactically complete but missing mandatory fields
+    InvalidMessage,
+}
+
 /// Represents the GNSS constellation (talker ID)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TalkerId {
