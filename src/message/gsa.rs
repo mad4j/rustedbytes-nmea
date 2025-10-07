@@ -52,7 +52,19 @@
 //! - VDOP: 2.1
 
 use crate::message::NmeaMessage;
-use crate::types::{GsaData, MessageType};
+use crate::types::{MessageType, TalkerId};
+
+/// GSA - GPS DOP and active satellites parameters
+#[derive(Debug, Clone)]
+pub struct GsaData {
+    pub talker_id: TalkerId,
+    pub mode: char,
+    pub fix_type: u8,
+    pub satellite_ids: [Option<u8>; 12],
+    pub pdop: Option<f32>,
+    pub hdop: Option<f32>,
+    pub vdop: Option<f32>,
+}
 
 impl NmeaMessage {
     /// Extract GSA message parameters

@@ -46,7 +46,27 @@
 //! - Geoid separation: 46.9 meters
 
 use crate::message::NmeaMessage;
-use crate::types::{GgaData, MessageType};
+use crate::types::{MessageType, TalkerId};
+
+/// GGA - Global Positioning System Fix Data parameters
+#[derive(Debug, Clone)]
+pub struct GgaData<'a> {
+    pub talker_id: TalkerId,
+    pub time: &'a str,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub fix_quality: u8,
+    pub num_satellites: Option<u8>,
+    pub hdop: Option<f32>,
+    pub altitude: Option<f32>,
+    pub altitude_units: Option<char>,
+    pub geoid_separation: Option<f32>,
+    pub geoid_units: Option<char>,
+    pub age_of_diff: Option<f32>,
+    pub diff_station_id: Option<&'a str>,
+}
 
 impl NmeaMessage {
     /// Extract GGA message parameters

@@ -10,7 +10,7 @@ mod parser;
 mod types;
 
 // Re-export public API
-pub use message::{Field, NmeaMessage};
+pub use message::{Field, GgaData, GllData, GsaData, GsvData, NmeaMessage, RmcData, SatelliteInfo, VtgData};
 pub use parser::NmeaParser;
 pub use types::*;
 

@@ -55,7 +55,21 @@
 //! - Magnetic variation: ~20° East (54.7 - 34.4)
 
 use crate::message::NmeaMessage;
-use crate::types::{MessageType, VtgData};
+use crate::types::{MessageType, TalkerId};
+
+/// VTG - Track Made Good and Ground Speed parameters
+#[derive(Debug, Clone)]
+pub struct VtgData {
+    pub talker_id: TalkerId,
+    pub track_true: Option<f32>,
+    pub track_true_indicator: Option<char>,
+    pub track_magnetic: Option<f32>,
+    pub track_magnetic_indicator: Option<char>,
+    pub speed_knots: Option<f32>,
+    pub speed_knots_indicator: Option<char>,
+    pub speed_kph: Option<f32>,
+    pub speed_kph_indicator: Option<char>,
+}
 
 impl NmeaMessage {
     /// Extract VTG message parameters

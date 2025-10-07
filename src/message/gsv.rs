@@ -55,7 +55,26 @@
 //! - Satellite 4: PRN=14, elevation=22°, azimuth=228°, SNR=45dB
 
 use crate::message::NmeaMessage;
-use crate::types::{GsvData, MessageType, SatelliteInfo};
+use crate::types::{MessageType, TalkerId};
+
+/// GSV - GPS Satellites in view parameters
+#[derive(Debug, Clone)]
+pub struct GsvData {
+    pub talker_id: TalkerId,
+    pub num_messages: u8,
+    pub message_num: u8,
+    pub satellites_in_view: u8,
+    pub satellite_info: [Option<SatelliteInfo>; 4],
+}
+
+/// Information about a single satellite
+#[derive(Debug, Clone)]
+pub struct SatelliteInfo {
+    pub prn: Option<u8>,
+    pub elevation: Option<u16>,
+    pub azimuth: Option<u16>,
+    pub snr: Option<u8>,
+}
 
 impl NmeaMessage {
     /// Extract GSV message parameters
