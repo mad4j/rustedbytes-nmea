@@ -54,7 +54,7 @@
 //! - Speed: 5.5 knots = 10.2 km/h
 //! - Magnetic variation: ~20° East (54.7 - 34.4)
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// VTG - Track Made Good and Ground Speed parameters
@@ -71,7 +71,7 @@ pub struct VtgData {
     pub speed_kph_indicator: Option<char>,
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract VTG message parameters
     ///
     /// Parses the VTG (Track Made Good and Ground Speed) message and returns
@@ -310,7 +310,8 @@ mod tests {
             }
         }
         assert!(result.is_some());
-        let vtg = result.unwrap().as_vtg().unwrap();
+        let msg = result.unwrap();
+        let vtg = msg.as_vtg().unwrap();
         assert_eq!(vtg.track_true, Some(0.0));
 
         // Test 359.9 degrees
@@ -322,7 +323,8 @@ mod tests {
             }
         }
         assert!(result.is_some());
-        let vtg = result.unwrap().as_vtg().unwrap();
+        let msg = result.unwrap();
+        let vtg = msg.as_vtg().unwrap();
         assert!((vtg.track_true.unwrap() - 359.9).abs() < 0.1);
     }
 

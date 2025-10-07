@@ -45,7 +45,7 @@
 //! - Altitude: 545.4 meters above MSL
 //! - Geoid separation: 46.9 meters
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// GGA - Global Positioning System Fix Data parameters
@@ -86,7 +86,7 @@ impl GgaData {
     }
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract GGA message parameters
     ///
     /// Parses the GGA (Global Positioning System Fix Data) message and returns
@@ -258,10 +258,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because time is mandatory
+        assert!(result.is_none());
     }
 
     #[test]
@@ -276,10 +274,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -294,10 +290,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -312,10 +306,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -330,10 +322,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -496,3 +486,4 @@ mod tests {
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GB);
     }
 }
+

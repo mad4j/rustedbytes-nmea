@@ -10,7 +10,7 @@ mod parser;
 mod types;
 
 // Re-export public API
-pub use message::{Field, GgaData, GllData, GsaData, GsvData, NmeaMessage, RmcData, SatelliteInfo, VtgData};
+pub use message::{Field, GgaData, GllData, GsaData, GsvData, RmcData, SatelliteInfo, VtgData};
 pub use parser::NmeaParser;
 pub use types::*;
 
@@ -39,9 +39,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::GGA);
-        assert!(msg.field_count > 0);
-        assert_eq!(msg.timestamp, 1);
+        assert_eq!(msg.message_type(), MessageType::GGA);
     }
 
     #[test]
@@ -58,8 +56,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::RMC);
-        assert!(msg.field_count > 0);
+        assert_eq!(msg.message_type(), MessageType::RMC);
     }
 
     #[test]
@@ -76,7 +73,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::GSA);
+        assert_eq!(msg.message_type(), MessageType::GSA);
     }
 
     #[test]
@@ -93,7 +90,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::GSV);
+        assert_eq!(msg.message_type(), MessageType::GSV);
     }
 
     #[test]
@@ -110,7 +107,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::GLL);
+        assert_eq!(msg.message_type(), MessageType::GLL);
     }
 
     #[test]
@@ -127,7 +124,7 @@ mod tests {
 
         assert!(result.is_some());
         let msg = result.unwrap();
-        assert_eq!(msg.message_type, MessageType::VTG);
+        assert_eq!(msg.message_type(), MessageType::VTG);
     }
 
     #[test]
@@ -150,13 +147,11 @@ mod tests {
         // Verify we can retrieve both messages
         let gga_msg = parser.get_last_message(MessageType::GGA);
         assert!(gga_msg.is_some());
-        assert_eq!(gga_msg.unwrap().message_type, MessageType::GGA);
-        assert_eq!(gga_msg.unwrap().timestamp, 1);
+        assert_eq!(gga_msg.unwrap().message_type(), MessageType::GGA);
 
         let rmc_msg = parser.get_last_message(MessageType::RMC);
         assert!(rmc_msg.is_some());
-        assert_eq!(rmc_msg.unwrap().message_type, MessageType::RMC);
-        assert_eq!(rmc_msg.unwrap().timestamp, 2);
+        assert_eq!(rmc_msg.unwrap().message_type(), MessageType::RMC);
 
         // Verify we get None for message types we haven't parsed
         let gsa_msg = parser.get_last_message(MessageType::GSA);
@@ -195,15 +190,14 @@ mod tests {
         assert!(result.is_some());
         let msg = result.unwrap();
 
-        // Check first field (sentence ID)
-        assert!(msg.fields[0].is_some());
-        let field0 = msg.fields[0].as_ref().unwrap();
-        assert_eq!(field0.as_str(), Some("GPGGA"));
-
-        // Check time field
-        assert!(msg.fields[1].is_some());
-        let field1 = msg.fields[1].as_ref().unwrap();
-        assert_eq!(field1.as_str(), Some("123519"));
+        // Verify message is parsed correctly
+        assert_eq!(msg.message_type(), MessageType::GGA);
+        if let Some(gga) = msg.as_gga() {
+            assert_eq!(gga.time(), "123519");
+            assert_eq!(gga.latitude, 4807.038);
+        } else {
+            panic!("Expected GGA message");
+        }
     }
 
     #[test]
@@ -264,16 +258,26 @@ mod tests {
         }
 
         let first_msg = parser.get_last_message(MessageType::GGA);
-        assert_eq!(first_msg.unwrap().timestamp, 1);
+        assert!(first_msg.is_some());
+        if let Some(msg) = first_msg {
+            if let Some(gga) = msg.as_gga() {
+                assert_eq!(gga.time(), "123519");
+            }
+        }
 
-        // Parse second GGA message
+        // Parse second GGA message with different time
         let gga2 = b"$GPGGA,133519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
         for &c in gga2.iter() {
             parser.parse_char(c);
         }
 
         let second_msg = parser.get_last_message(MessageType::GGA);
-        assert_eq!(second_msg.unwrap().timestamp, 2);
+        assert!(second_msg.is_some());
+        if let Some(msg) = second_msg {
+            if let Some(gga) = msg.as_gga() {
+                assert_eq!(gga.time(), "133519");
+            }
+        }
     }
 
     #[test]
@@ -485,11 +489,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
         // Should return None because mandatory fields (latitude, longitude) are empty
-        assert!(gga.is_none());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -630,11 +631,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
         // Should return None because time is mandatory
-        assert!(gga.is_none());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -650,11 +648,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
         // Should return None because date is mandatory
-        assert!(rmc.is_none());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -670,11 +665,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsa = msg.as_gsa();
         // Should return None because mode is mandatory
-        assert!(gsa.is_none());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -690,11 +682,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsv = msg.as_gsv();
         // Should return None because num_messages is mandatory
-        assert!(gsv.is_none());
+        assert!(result.is_none());
     }
 
     #[test]
@@ -710,10 +699,10 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
         // Should return None because status is mandatory
-        assert!(gll.is_none());
+        assert!(result.is_none());
     }
 }
+
+
+

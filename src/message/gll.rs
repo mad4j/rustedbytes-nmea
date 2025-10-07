@@ -38,7 +38,7 @@
 //! - Time: 22:54:44 UTC
 //! - Status: Active (valid data)
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// GLL - Geographic Position parameters
@@ -61,7 +61,7 @@ impl GllData {
     }
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract GLL message parameters
     ///
     /// Parses the GLL (Geographic Position) message and returns a structured
@@ -218,10 +218,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
-        assert!(gll.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -236,10 +234,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
-        assert!(gll.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -254,10 +250,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
-        assert!(gll.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -272,10 +266,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
-        assert!(gll.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -290,10 +282,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gll = msg.as_gll();
-        assert!(gll.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -414,3 +404,4 @@ mod tests {
         assert_eq!(gll_data.time(), "225444.50");
     }
 }
+

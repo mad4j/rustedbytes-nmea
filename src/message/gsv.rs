@@ -54,7 +54,7 @@
 //! - Satellite 3: PRN=12, elevation=7°, azimuth=344°, SNR=39dB
 //! - Satellite 4: PRN=14, elevation=22°, azimuth=228°, SNR=45dB
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// GSV - GPS Satellites in view parameters
@@ -76,7 +76,7 @@ pub struct SatelliteInfo {
     pub snr: Option<u8>,
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract GSV message parameters
     ///
     /// Parses the GSV (GPS Satellites in View) message and returns a structured
@@ -297,10 +297,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsv = msg.as_gsv();
-        assert!(gsv.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -315,10 +313,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsv = msg.as_gsv();
-        assert!(gsv.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -333,10 +329,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsv = msg.as_gsv();
-        assert!(gsv.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -506,28 +500,31 @@ mod tests {
 
         // First message of sequence
         let sentence1 = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-        let mut gsv1 = None;
+        let mut result1 = None;
         for &c in sentence1.iter() {
             if let Some(msg) = parser.parse_char(c) {
-                gsv1 = msg.as_gsv();
+                result1 = Some(msg);
             }
         }
-        assert!(gsv1.is_some());
-        let gsv1_data = gsv1.unwrap();
+        assert!(result1.is_some());
+        let msg1 = result1.unwrap();
+        let gsv1_data = msg1.as_gsv().unwrap();
         assert_eq!(gsv1_data.message_num, 1);
         assert_eq!(gsv1_data.num_messages, 2);
 
         // Second message of sequence
         let sentence2 = b"$GPGSV,2,2,08,20,35,073,44,21,25,210,42,25,15,120,40,32,10,045,38*75\r\n";
-        let mut gsv2 = None;
+        let mut result2 = None;
         for &c in sentence2.iter() {
             if let Some(msg) = parser.parse_char(c) {
-                gsv2 = msg.as_gsv();
+                result2 = Some(msg);
             }
         }
-        assert!(gsv2.is_some());
-        let gsv2_data = gsv2.unwrap();
+        assert!(result2.is_some());
+        let msg2 = result2.unwrap();
+        let gsv2_data = msg2.as_gsv().unwrap();
         assert_eq!(gsv2_data.message_num, 2);
         assert_eq!(gsv2_data.num_messages, 2);
     }
 }
+

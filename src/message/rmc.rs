@@ -42,7 +42,7 @@
 //! - Date: March 23, 1994
 //! - Magnetic variation: 3.1° West
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// RMC - Recommended Minimum Navigation Information parameters
@@ -76,7 +76,7 @@ impl RmcData {
     }
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract RMC message parameters
     ///
     /// Parses the RMC (Recommended Minimum Navigation Information) message and
@@ -260,10 +260,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -278,10 +276,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -296,10 +292,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -314,10 +308,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -332,10 +324,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -450,3 +440,4 @@ mod tests {
         assert_eq!(ga_rmc.talker_id, crate::types::TalkerId::GA);
     }
 }
+
