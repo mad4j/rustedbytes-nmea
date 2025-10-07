@@ -22,7 +22,6 @@ impl StoredMessage {
 pub struct NmeaParser {
     buffer: [u8; MAX_SENTENCE_LENGTH],
     buffer_pos: usize,
-    timestamp_counter: u64,
     stored_gga: StoredMessage,
     stored_rmc: StoredMessage,
     stored_gsa: StoredMessage,
@@ -37,7 +36,6 @@ impl NmeaParser {
         NmeaParser {
             buffer: [0; MAX_SENTENCE_LENGTH],
             buffer_pos: 0,
-            timestamp_counter: 0,
             stored_gga: StoredMessage::new(),
             stored_rmc: StoredMessage::new(),
             stored_gsa: StoredMessage::new(),
@@ -117,13 +115,11 @@ impl NmeaParser {
             }
         }
 
-        self.timestamp_counter += 1;
         let parsed = ParsedSentence {
             message_type,
             talker_id,
             fields,
             field_count,
-            timestamp: self.timestamp_counter,
         };
 
         // Convert parsed sentence to typed message
@@ -212,17 +208,11 @@ impl NmeaParser {
     /// Reset the parser state
     pub fn reset(&mut self) {
         self.buffer_pos = 0;
-        self.timestamp_counter = 0;
     }
 
     #[cfg(test)]
     pub(crate) fn buffer_pos(&self) -> usize {
         self.buffer_pos
-    }
-
-    #[cfg(test)]
-    pub(crate) fn timestamp_counter(&self) -> u64 {
-        self.timestamp_counter
     }
 }
 

@@ -22,7 +22,6 @@ mod tests {
     fn test_parser_initialization() {
         let parser = NmeaParser::new();
         assert_eq!(parser.buffer_pos(), 0);
-        assert_eq!(parser.timestamp_counter(), 0);
     }
 
     #[test]
@@ -209,10 +208,7 @@ mod tests {
             parser.parse_char(c);
         }
 
-        assert_eq!(parser.timestamp_counter(), 1);
-
         parser.reset();
-        assert_eq!(parser.timestamp_counter(), 0);
         assert_eq!(parser.buffer_pos(), 0);
     }
 
