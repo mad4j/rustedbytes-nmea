@@ -39,7 +39,19 @@
 //! - Status: Active (valid data)
 
 use crate::message::NmeaMessage;
-use crate::types::{GllData, MessageType};
+use crate::types::{MessageType, TalkerId};
+
+/// GLL - Geographic Position parameters
+#[derive(Debug, Clone)]
+pub struct GllData<'a> {
+    pub talker_id: TalkerId,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub time: &'a str,
+    pub status: char,
+}
 
 impl NmeaMessage {
     /// Extract GLL message parameters

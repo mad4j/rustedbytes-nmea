@@ -14,6 +14,14 @@ mod gsv;
 mod rmc;
 mod vtg;
 
+// Re-export message data structures
+pub use gga::GgaData;
+pub use gll::GllData;
+pub use gsa::GsaData;
+pub use gsv::{GsvData, SatelliteInfo};
+pub use rmc::RmcData;
+pub use vtg::VtgData;
+
 /// Maximum number of fields in an NMEA sentence
 pub(crate) const MAX_FIELDS: usize = 20;
 

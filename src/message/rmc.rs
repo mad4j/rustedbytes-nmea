@@ -43,7 +43,24 @@
 //! - Magnetic variation: 3.1° West
 
 use crate::message::NmeaMessage;
-use crate::types::{MessageType, RmcData};
+use crate::types::{MessageType, TalkerId};
+
+/// RMC - Recommended Minimum Navigation Information parameters
+#[derive(Debug, Clone)]
+pub struct RmcData<'a> {
+    pub talker_id: TalkerId,
+    pub time: &'a str,
+    pub status: char,
+    pub latitude: f64,
+    pub lat_direction: char,
+    pub longitude: f64,
+    pub lon_direction: char,
+    pub speed_knots: f32,
+    pub track_angle: f32,
+    pub date: &'a str,
+    pub magnetic_variation: Option<f32>,
+    pub mag_var_direction: Option<char>,
+}
 
 impl NmeaMessage {
     /// Extract RMC message parameters
