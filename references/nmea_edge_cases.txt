@@ -1,0 +1,12 @@
+$GPGGA,123519,,,,,,0,00,99.99,,,,,,*48
+  # Tutti campi vuoti
+$GPTXT,01,01,02,Software Version 7.03.00 (12345)*6E
+  # Frase testuale
+$GPXTE,A,A,0.67,L,N*6F
+  # Frase poco comune
+$GPRMC,000000,A,0000.000,N,00000.000,E,000.0,000.0,000000,000.0,W*7C
+  # Coordinate nulle
+!AIVDM,1,1,,B,15N:;R0P00PD;88MD5MTDwwP0<0L,0*5C
+  # Frase AIS con '!' invece di '$'
+$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47$GPRMC,235947,A,5540.123,N,01231.456,E,000.0,360.0,130694,011.3,E*62
+  # Concatenati senza newline

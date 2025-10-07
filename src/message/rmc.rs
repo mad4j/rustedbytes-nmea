@@ -130,12 +130,12 @@ impl ParsedSentence {
         // Validate mandatory fields
         let time_str = self.get_field_str(1)?;
         let status = self.parse_field_char(2)?;
-        let latitude = self.parse_field_f64(3)?;
+        let latitude: f64 = self.parse_field(3)?;
         let lat_direction = self.parse_field_char(4)?;
-        let longitude = self.parse_field_f64(5)?;
+        let longitude: f64 = self.parse_field(5)?;
         let lon_direction = self.parse_field_char(6)?;
-        let speed_knots = self.parse_field_f32(7)?;
-        let track_angle = self.parse_field_f32(8)?;
+        let speed_knots: f32 = self.parse_field(7)?;
+        let track_angle: f32 = self.parse_field(8)?;
         let date_str = self.get_field_str(9)?;
 
         // Copy time to fixed array
@@ -163,7 +163,7 @@ impl ParsedSentence {
             track_angle,
             date_data,
             date_len,
-            magnetic_variation: self.parse_field_f32(10),
+            magnetic_variation: self.parse_field(10),
             mag_var_direction: self.parse_field_char(11),
         })
     }

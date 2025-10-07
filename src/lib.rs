@@ -21,88 +21,36 @@ pub type ParseResult = (Result<Option<NmeaMessage>, ParseError>, usize);
 mod tests {
     use super::*;
 
+    /// Helper function to test message parsing
+    fn test_message_parsing(sentence: &[u8], expected_type: MessageType) {
+        let parser = NmeaParser::new();
+        let (result, consumed) = parser.parse_bytes(sentence);
+        assert!(result.is_ok());
+        assert_eq!(consumed, sentence.len());
+        let msg = result.unwrap().unwrap();
+        assert_eq!(msg.message_type(), expected_type);
+    }
+
     #[test]
     fn test_parser_initialization() {
         let _parser = NmeaParser::new();
-        // Parser is now stateless, no internal state to check
+        // Parser is stateless, no internal state to check
     }
 
     #[test]
-    fn test_parse_gga_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+    fn test_parse_all_message_types() {
+        let test_cases = [
+            (b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n".as_slice(), MessageType::GGA),
+            (b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n".as_slice(), MessageType::RMC),
+            (b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n".as_slice(), MessageType::GSA),
+            (b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n".as_slice(), MessageType::GSV),
+            (b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n".as_slice(), MessageType::GLL),
+            (b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n".as_slice(), MessageType::VTG),
+        ];
 
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::GGA);
-    }
-
-    #[test]
-    fn test_parse_rmc_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::RMC);
-    }
-
-    #[test]
-    fn test_parse_gsa_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::GSA);
-    }
-
-    #[test]
-    fn test_parse_gsv_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::GSV);
-    }
-
-    #[test]
-    fn test_parse_gll_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::GLL);
-    }
-
-    #[test]
-    fn test_parse_vtg_message() {
-        let parser = NmeaParser::new();
-        let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        assert!(result.is_ok());
-        assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
-        assert_eq!(msg.message_type(), MessageType::VTG);
-    }
-
-    #[test]
-    fn test_get_last_message() {
-        // This test is no longer applicable as parser is now stateless
-        // Parser no longer stores messages
+        for (sentence, expected_type) in test_cases {
+            test_message_parsing(sentence, expected_type);
+        }
     }
 
     #[test]
@@ -116,9 +64,7 @@ mod tests {
         let mut offset = 0;
         while offset < stream.len() {
             let (result, consumed) = parser.parse_bytes(&stream[offset..]);
-            if consumed == 0 {
-                break; // No more complete messages
-            }
+            if consumed == 0 { break; }
             offset += consumed;
             if result.is_ok() && result.unwrap().is_some() {
                 message_count += 1;
@@ -138,50 +84,29 @@ mod tests {
         assert_eq!(consumed, sentence.len());
         let msg = result.unwrap().unwrap();
 
-        // Verify message is parsed correctly
         assert_eq!(msg.message_type(), MessageType::GGA);
-        if let Some(gga) = msg.as_gga() {
-            assert_eq!(gga.time(), "123519");
-            assert_eq!(gga.latitude, 4807.038);
-        } else {
-            panic!("Expected GGA message");
-        }
+        let gga = msg.as_gga().expect("Expected GGA message");
+        assert_eq!(gga.time(), "123519");
+        assert_eq!(gga.latitude, 4807.038);
     }
 
     #[test]
-    fn test_parser_reset() {
-        // This test is no longer applicable as parser is now stateless
-        // No internal state to reset
-    }
-
-    #[test]
-    fn test_invalid_sentence() {
+    fn test_invalid_and_partial_sentences() {
         let parser = NmeaParser::new();
+        
+        // Test invalid data without $
         let invalid = b"INVALID DATA\r\n";
-
         let (result, consumed) = parser.parse_bytes(invalid);
-        // Invalid data without $ should be consumed as spurious
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
         assert_eq!(consumed, invalid.len());
-    }
 
-    #[test]
-    fn test_partial_sentence() {
-        let parser = NmeaParser::new();
+        // Test partial message
         let partial = b"$GPGGA,123519,4807.038,N";
-
         let (result, consumed) = parser.parse_bytes(partial);
-        // Partial message - should return None with 0 bytes consumed (waiting for more data)
         assert!(result.is_ok());
         assert!(result.unwrap().is_none());
         assert_eq!(consumed, 0);
-    }
-
-    #[test]
-    fn test_message_overwrite() {
-        // This test is no longer applicable as parser is now stateless
-        // Parser no longer stores messages
     }
 
     #[test]
@@ -453,68 +378,22 @@ mod tests {
     }
 
     #[test]
-    fn test_gga_missing_time() {
+    fn test_messages_with_missing_mandatory_fields() {
         let parser = NmeaParser::new();
-        // GGA message without time (mandatory field)
-        let sentence = b"$GPGGA,,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+        let test_cases = [
+            b"$GPGGA,,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n".as_slice(), // Missing time
+            b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,,003.1,W*6A\r\n".as_slice(), // Missing date
+            b"$GPGSA,,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n".as_slice(), // Missing mode
+            b"$GPGSV,,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n".as_slice(), // Missing num_messages
+            b"$GPGLL,4916.45,N,12311.12,W,225444,,*1D\r\n".as_slice(), // Missing status
+        ];
 
-        let (result, consumed) = parser.parse_bytes(sentence);
-        // Should return error because time is mandatory
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
-    }
-
-    #[test]
-    fn test_rmc_missing_mandatory_field() {
-        let parser = NmeaParser::new();
-        // RMC message without date (mandatory field)
-        let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,,003.1,W*6A\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        // Should return error because date is mandatory
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
-    }
-
-    #[test]
-    fn test_gsa_missing_mode() {
-        let parser = NmeaParser::new();
-        // GSA message without mode (mandatory field)
-        let sentence = b"$GPGSA,,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        // Should return error because mode is mandatory
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
-    }
-
-    #[test]
-    fn test_gsv_missing_mandatory_field() {
-        let parser = NmeaParser::new();
-        // GSV message without num_messages (mandatory field)
-        let sentence = b"$GPGSV,,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        // Should return error because num_messages is mandatory
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
-    }
-
-    #[test]
-    fn test_gll_missing_status() {
-        let parser = NmeaParser::new();
-        // GLL message without status (mandatory field)
-        let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,,*1D\r\n";
-
-        let (result, consumed) = parser.parse_bytes(sentence);
-        // Should return error because status is mandatory
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
+        for sentence in test_cases {
+            let (result, consumed) = parser.parse_bytes(sentence);
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+            assert_eq!(consumed, sentence.len());
+        }
     }
 
     // New tests for the updated parsing logic

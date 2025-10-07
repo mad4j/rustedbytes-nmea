@@ -136,11 +136,11 @@ impl ParsedSentence {
 
         // Validate mandatory fields
         let time_str = self.get_field_str(1)?;
-        let latitude = self.parse_field_f64(2)?;
+        let latitude: f64 = self.parse_field(2)?;
         let lat_direction = self.parse_field_char(3)?;
-        let longitude = self.parse_field_f64(4)?;
+        let longitude: f64 = self.parse_field(4)?;
         let lon_direction = self.parse_field_char(5)?;
-        let fix_quality = self.parse_field_u8(6)?;
+        let fix_quality: u8 = self.parse_field(6)?;
 
         // Copy time string to fixed array
         let mut time_data = [0u8; 16];
@@ -168,13 +168,13 @@ impl ParsedSentence {
             longitude,
             lon_direction,
             fix_quality,
-            num_satellites: self.parse_field_u8(7),
-            hdop: self.parse_field_f32(8),
-            altitude: self.parse_field_f32(9),
+            num_satellites: self.parse_field(7),
+            hdop: self.parse_field(8),
+            altitude: self.parse_field(9),
             altitude_units: self.parse_field_char(10),
-            geoid_separation: self.parse_field_f32(11),
+            geoid_separation: self.parse_field(11),
             geoid_units: self.parse_field_char(12),
-            age_of_diff: self.parse_field_f32(13),
+            age_of_diff: self.parse_field(13),
             diff_station_id_data,
             diff_station_id_len,
         })

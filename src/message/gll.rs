@@ -106,9 +106,9 @@ impl ParsedSentence {
         }
 
         // Validate mandatory fields
-        let latitude = self.parse_field_f64(1)?;
+        let latitude: f64 = self.parse_field(1)?;
         let lat_direction = self.parse_field_char(2)?;
-        let longitude = self.parse_field_f64(3)?;
+        let longitude: f64 = self.parse_field(3)?;
         let lon_direction = self.parse_field_char(4)?;
         let time_str = self.get_field_str(5)?;
         let status = self.parse_field_char(6)?;

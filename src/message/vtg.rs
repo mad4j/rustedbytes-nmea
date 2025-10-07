@@ -118,13 +118,13 @@ impl ParsedSentence {
 
         Some(VtgData {
             talker_id: self.talker_id,
-            track_true: self.parse_field_f32(1),
+            track_true: self.parse_field(1),
             track_true_indicator: self.parse_field_char(2),
-            track_magnetic: self.parse_field_f32(3),
+            track_magnetic: self.parse_field(3),
             track_magnetic_indicator: self.parse_field_char(4),
-            speed_knots: self.parse_field_f32(5),
+            speed_knots: self.parse_field(5),
             speed_knots_indicator: self.parse_field_char(6),
-            speed_kph: self.parse_field_f32(7),
+            speed_kph: self.parse_field(7),
             speed_kph_indicator: self.parse_field_char(8),
         })
     }

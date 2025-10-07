@@ -124,16 +124,16 @@ impl ParsedSentence {
         }
 
         // Validate mandatory fields
-        let num_messages = self.parse_field_u8(1)?;
-        let message_num = self.parse_field_u8(2)?;
-        let satellites_in_view = self.parse_field_u8(3)?;
+        let num_messages: u8 = self.parse_field(1)?;
+        let message_num: u8 = self.parse_field(2)?;
+        let satellites_in_view: u8 = self.parse_field(3)?;
 
         let sat1 = if self.get_field_str(4).is_some() {
             Some(SatelliteInfo {
-                prn: self.parse_field_u8(4),
-                elevation: self.parse_field_u16(5),
-                azimuth: self.parse_field_u16(6),
-                snr: self.parse_field_u8(7),
+                prn: self.parse_field(4),
+                elevation: self.parse_field(5),
+                azimuth: self.parse_field(6),
+                snr: self.parse_field(7),
             })
         } else {
             None
@@ -141,10 +141,10 @@ impl ParsedSentence {
 
         let sat2 = if self.get_field_str(8).is_some() {
             Some(SatelliteInfo {
-                prn: self.parse_field_u8(8),
-                elevation: self.parse_field_u16(9),
-                azimuth: self.parse_field_u16(10),
-                snr: self.parse_field_u8(11),
+                prn: self.parse_field(8),
+                elevation: self.parse_field(9),
+                azimuth: self.parse_field(10),
+                snr: self.parse_field(11),
             })
         } else {
             None
@@ -152,10 +152,10 @@ impl ParsedSentence {
 
         let sat3 = if self.get_field_str(12).is_some() {
             Some(SatelliteInfo {
-                prn: self.parse_field_u8(12),
-                elevation: self.parse_field_u16(13),
-                azimuth: self.parse_field_u16(14),
-                snr: self.parse_field_u8(15),
+                prn: self.parse_field(12),
+                elevation: self.parse_field(13),
+                azimuth: self.parse_field(14),
+                snr: self.parse_field(15),
             })
         } else {
             None
@@ -163,10 +163,10 @@ impl ParsedSentence {
 
         let sat4 = if self.get_field_str(16).is_some() {
             Some(SatelliteInfo {
-                prn: self.parse_field_u8(16),
-                elevation: self.parse_field_u16(17),
-                azimuth: self.parse_field_u16(18),
-                snr: self.parse_field_u8(19),
+                prn: self.parse_field(16),
+                elevation: self.parse_field(17),
+                azimuth: self.parse_field(18),
+                snr: self.parse_field(19),
             })
         } else {
             None

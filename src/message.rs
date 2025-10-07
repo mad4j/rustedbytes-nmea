@@ -47,23 +47,11 @@ impl ParsedSentence {
         }
     }
 
-    /// Helper to parse a field as u8
-    pub(crate) fn parse_field_u8(&self, index: usize) -> Option<u8> {
-        self.get_field_str(index)?.parse().ok()
-    }
-
-    /// Helper to parse a field as u16
-    pub(crate) fn parse_field_u16(&self, index: usize) -> Option<u16> {
-        self.get_field_str(index)?.parse().ok()
-    }
-
-    /// Helper to parse a field as f32
-    pub(crate) fn parse_field_f32(&self, index: usize) -> Option<f32> {
-        self.get_field_str(index)?.parse().ok()
-    }
-
-    /// Helper to parse a field as f64
-    pub(crate) fn parse_field_f64(&self, index: usize) -> Option<f64> {
+    /// Generic helper to parse a field using FromStr trait
+    pub(crate) fn parse_field<T>(&self, index: usize) -> Option<T>
+    where
+        T: core::str::FromStr,
+    {
         self.get_field_str(index)?.parse().ok()
     }
 
@@ -80,39 +68,34 @@ impl ParsedSentence {
 /// string storage without heap allocation.
 #[derive(Debug, Clone, Copy)]
 pub struct Field {
-    data: [u8; 32],
-    len: usize,
+    data: [u8; 16], // Reduced from 32 to 16 bytes - sufficient for most NMEA fields
+    len: u8,        // Changed from usize to u8 for memory efficiency
 }
 
 impl Field {
-    /// Create a new empty field
-    pub(crate) fn new() -> Self {
-        Field {
-            data: [0; 32],
-            len: 0,
-        }
-    }
-
     /// Create a field from a byte slice
     ///
-    /// Copies up to 32 bytes from the input slice.
+    /// Copies up to 16 bytes from the input slice.
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
-        let mut field = Field::new();
-        let copy_len = bytes.len().min(32);
-        field.data[..copy_len].copy_from_slice(&bytes[..copy_len]);
-        field.len = copy_len;
-        field
+        let copy_len = bytes.len().min(16);
+        let mut data = [0; 16];
+        data[..copy_len].copy_from_slice(&bytes[..copy_len]);
+        
+        Field {
+            data,
+            len: copy_len as u8,
+        }
     }
 
     /// Get the field as a string slice
     ///
     /// Returns `None` if the field contains invalid UTF-8.
     pub fn as_str(&self) -> Option<&str> {
-        core::str::from_utf8(&self.data[..self.len]).ok()
+        core::str::from_utf8(&self.data[..self.len as usize]).ok()
     }
 
     /// Get the field as a byte slice
     pub fn as_bytes(&self) -> &[u8] {
-        &self.data[..self.len]
+        &self.data[..self.len as usize]
     }
 }

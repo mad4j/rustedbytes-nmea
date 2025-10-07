@@ -69,24 +69,22 @@ impl NmeaParser {
 
     /// Parse a complete NMEA sentence from a buffer
     fn parse_sentence(&self, buffer: &[u8]) -> Option<NmeaMessage> {
-        if buffer.len() < 7 {
+        if buffer.len() < 7 || buffer[0] != b'$' {
             return None;
         }
 
-        // Verify it starts with $
-        if buffer[0] != b'$' {
-            return None;
-        }
-
-        // Verify checksum if present
+        // Find sentence end (before checksum marker '*')
         let sentence_end = buffer.iter().position(|&b| b == b'*').unwrap_or(buffer.len());
-
+        
         if sentence_end < 7 {
             return None;
         }
 
         // Extract talker ID and message type
         let (talker_id, message_type) = self.identify_message(&buffer[1..6]);
+        if message_type == MessageType::Unknown {
+            return None;
+        }
 
         // Parse fields
         let mut fields = [None; MAX_FIELDS];
@@ -133,7 +131,6 @@ impl NmeaParser {
             return (TalkerId::Unknown, MessageType::Unknown);
         }
 
-        // Extract talker ID (first 2 characters)
         let talker_id = match &header_bytes[0..2] {
             b"GP" => TalkerId::GP,
             b"GL" => TalkerId::GL,
@@ -145,7 +142,6 @@ impl NmeaParser {
             _ => TalkerId::Unknown,
         };
 
-        // Extract message type (last 3 characters)
         let message_type = match &header_bytes[2..5] {
             b"GGA" => MessageType::GGA,
             b"RMC" => MessageType::RMC,

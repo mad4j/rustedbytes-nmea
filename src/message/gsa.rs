@@ -113,29 +113,29 @@ impl ParsedSentence {
 
         // Validate mandatory fields
         let mode = self.parse_field_char(1)?;
-        let fix_type = self.parse_field_u8(2)?;
+        let fix_type: u8 = self.parse_field(2)?;
 
         Some(GsaData {
             talker_id: self.talker_id,
             mode,
             fix_type,
             satellite_ids: [
-                self.parse_field_u8(3),
-                self.parse_field_u8(4),
-                self.parse_field_u8(5),
-                self.parse_field_u8(6),
-                self.parse_field_u8(7),
-                self.parse_field_u8(8),
-                self.parse_field_u8(9),
-                self.parse_field_u8(10),
-                self.parse_field_u8(11),
-                self.parse_field_u8(12),
-                self.parse_field_u8(13),
-                self.parse_field_u8(14),
+                self.parse_field(3),
+                self.parse_field(4),
+                self.parse_field(5),
+                self.parse_field(6),
+                self.parse_field(7),
+                self.parse_field(8),
+                self.parse_field(9),
+                self.parse_field(10),
+                self.parse_field(11),
+                self.parse_field(12),
+                self.parse_field(13),
+                self.parse_field(14),
             ],
-            pdop: self.parse_field_f32(15),
-            hdop: self.parse_field_f32(16),
-            vdop: self.parse_field_f32(17),
+            pdop: self.parse_field(15),
+            hdop: self.parse_field(16),
+            vdop: self.parse_field(17),
         })
     }
 }
