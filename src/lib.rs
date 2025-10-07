@@ -14,8 +14,8 @@ pub use message::{Field, GgaData, GllData, GsaData, GsvData, RmcData, SatelliteI
 pub use parser::NmeaParser;
 pub use types::*;
 
-/// Parse result type: returns either an optional message (None for partial) or error, plus bytes consumed
-pub type ParseResult = (Result<Option<NmeaMessage>, ParseError>, usize);
+/// Parse result type: returns optional message and bytes consumed, or error
+pub type ParseResult = Result<(Option<NmeaMessage>, usize), ParseError>;
 
 #[cfg(test)]
 mod tests {
@@ -24,10 +24,11 @@ mod tests {
     /// Helper function to test message parsing
     fn test_message_parsing(sentence: &[u8], expected_type: MessageType) {
         let parser = NmeaParser::new();
-        let (result, consumed) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
+        let (msg, consumed) = result.unwrap();
         assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
+        let msg = msg.unwrap();
         assert_eq!(msg.message_type(), expected_type);
     }
 
@@ -63,10 +64,12 @@ mod tests {
         let mut message_count = 0;
         let mut offset = 0;
         while offset < stream.len() {
-            let (result, consumed) = parser.parse_bytes(&stream[offset..]);
+            let result = parser.parse_bytes(&stream[offset..]);
+            if result.is_err() { break; }
+            let (msg, consumed) = result.unwrap();
             if consumed == 0 { break; }
             offset += consumed;
-            if result.is_ok() && result.unwrap().is_some() {
+            if msg.is_some() {
                 message_count += 1;
             }
         }
@@ -79,10 +82,11 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, consumed) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
+        let (msg, consumed) = result.unwrap();
         assert_eq!(consumed, sentence.len());
-        let msg = result.unwrap().unwrap();
+        let msg = msg.unwrap();
 
         assert_eq!(msg.message_type(), MessageType::GGA);
         let gga = msg.as_gga().expect("Expected GGA message");
@@ -96,16 +100,18 @@ mod tests {
         
         // Test invalid data without $
         let invalid = b"INVALID DATA\r\n";
-        let (result, consumed) = parser.parse_bytes(invalid);
+        let result = parser.parse_bytes(invalid);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_none());
         assert_eq!(consumed, invalid.len());
 
         // Test partial message
         let partial = b"$GPGGA,123519,4807.038,N";
-        let (result, consumed) = parser.parse_bytes(partial);
+        let result = parser.parse_bytes(partial);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_none());
         assert_eq!(consumed, 0);
     }
 
@@ -114,9 +120,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
 
@@ -138,9 +145,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let rmc = msg.as_rmc();
         assert!(rmc.is_some());
 
@@ -161,9 +169,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gsa = msg.as_gsa();
         assert!(gsa.is_some());
 
@@ -183,9 +192,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gsv = msg.as_gsv();
         assert!(gsv.is_some());
 
@@ -208,9 +218,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gll = msg.as_gll();
         assert!(gll.is_some());
 
@@ -228,9 +239,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let vtg = msg.as_vtg();
         assert!(vtg.is_some());
 
@@ -250,9 +262,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
 
         // Try to extract RMC data from a GGA message
         let rmc = msg.as_rmc();
@@ -269,11 +282,10 @@ mod tests {
         // GGA message with some empty mandatory fields should fail to parse
         let sentence = b"$GPGGA,123519,,N,,E,1,,,,,M,,M,,*47\r\n";
 
-        let (result, consumed) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         // Should return error because mandatory fields (latitude, longitude) are empty
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, sentence.len());
     }
 
     #[test]
@@ -282,9 +294,10 @@ mod tests {
         // RMC message with void status (still valid)
         let sentence = b"$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let rmc = msg.as_rmc();
         assert!(rmc.is_some());
 
@@ -298,9 +311,10 @@ mod tests {
         // GSA message with only a few satellites
         let sentence = b"$GPGSA,A,3,01,,,,,,,,,,,,2.5,1.3,2.1*39\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gsa = msg.as_gsa();
         assert!(gsa.is_some());
 
@@ -320,9 +334,10 @@ mod tests {
         // GSV message with only two satellites
         let sentence = b"$GPGSV,1,1,02,01,40,083,46,02,17,308,*75\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gsv = msg.as_gsv();
         assert!(gsv.is_some());
 
@@ -356,9 +371,10 @@ mod tests {
         let parser = NmeaParser::new();
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, _) = parser.parse_bytes(sentence);
+        let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
-        let msg = result.unwrap().unwrap();
+        let (msg, _) = result.unwrap();
+        let msg = msg.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
 
@@ -389,10 +405,9 @@ mod tests {
         ];
 
         for sentence in test_cases {
-            let (result, consumed) = parser.parse_bytes(sentence);
+            let result = parser.parse_bytes(sentence);
             assert!(result.is_err());
             assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-            assert_eq!(consumed, sentence.len());
         }
     }
 
@@ -403,9 +418,10 @@ mod tests {
         // Data with spurious characters before the message
         let data = b"GARBAGE$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, consumed) = parser.parse_bytes(data);
+        let result = parser.parse_bytes(data);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_some());
         assert_eq!(consumed, data.len());
     }
 
@@ -416,16 +432,16 @@ mod tests {
                      $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
         // Parse first message
-        let (result1, consumed1) = parser.parse_bytes(data);
+        let result1 = parser.parse_bytes(data);
         assert!(result1.is_ok());
-        let msg1 = result1.unwrap();
+        let (msg1, consumed1) = result1.unwrap();
         assert!(msg1.is_some());
         assert_eq!(msg1.unwrap().message_type(), MessageType::GGA);
 
         // Parse second message
-        let (result2, consumed2) = parser.parse_bytes(&data[consumed1..]);
+        let result2 = parser.parse_bytes(&data[consumed1..]);
         assert!(result2.is_ok());
-        let msg2 = result2.unwrap();
+        let (msg2, consumed2) = result2.unwrap();
         assert!(msg2.is_some());
         assert_eq!(msg2.unwrap().message_type(), MessageType::RMC);
 
@@ -439,9 +455,10 @@ mod tests {
         // Partial message without line ending
         let partial = b"$GPGGA,123519,4807.038,N,01131.000,E,1";
 
-        let (result, consumed) = parser.parse_bytes(partial);
+        let result = parser.parse_bytes(partial);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_none());
         assert_eq!(consumed, 0); // No bytes consumed for partial message
     }
 
@@ -451,9 +468,10 @@ mod tests {
         // Only spurious data without any message
         let spurious = b"GARBAGE DATA WITHOUT DOLLAR SIGN\r\n";
 
-        let (result, consumed) = parser.parse_bytes(spurious);
+        let result = parser.parse_bytes(spurious);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_none());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_none());
         assert_eq!(consumed, spurious.len()); // All spurious data consumed
     }
 
@@ -462,9 +480,10 @@ mod tests {
         let parser = NmeaParser::new();
         let data = b"JUNK$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\nMORE";
 
-        let (result, consumed) = parser.parse_bytes(data);
+        let result = parser.parse_bytes(data);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_some());
+        let (msg, consumed) = result.unwrap();
+        assert!(msg.is_some());
         // Should consume up to and including the \n, but not "MORE"
         assert!(consumed < data.len());
         assert!(consumed > 0);
@@ -477,10 +496,9 @@ mod tests {
         // Complete message but with missing mandatory field
         let invalid = b"$GPGGA,,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
 
-        let (result, consumed) = parser.parse_bytes(invalid);
+        let result = parser.parse_bytes(invalid);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
-        assert_eq!(consumed, invalid.len()); // Invalid message is consumed
     }
 }
 

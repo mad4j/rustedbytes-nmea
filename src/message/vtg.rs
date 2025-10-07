@@ -103,8 +103,8 @@ impl ParsedSentence {
     /// let parser = NmeaParser::new();
     /// let sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
     ///
-    /// let (result, _consumed) = parser.parse_bytes(sentence);
-    /// if let Ok(Some(msg)) = result {
+    /// let result = parser.parse_bytes(sentence);
+    /// if let Ok((Some(msg), _consumed)) = result {
     ///     if let Some(vtg) = msg.as_vtg() {
     ///         assert_eq!(vtg.track_true, Some(54.7));
     ///         assert_eq!(vtg.speed_knots, Some(5.5));
