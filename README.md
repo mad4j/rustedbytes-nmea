@@ -38,7 +38,7 @@ rustedbytes-nmea = "0.1.0"
 ### Basic Example
 
 ```rust
-use rustedbytes_nmea::{NmeaParser, MessageType};
+use rustedbytes_nmea::{NmeaParser, MessageType, NmeaMessage};
 
 fn main() {
     let mut parser = NmeaParser::new();
@@ -49,24 +49,32 @@ fn main() {
     // Parse character by character
     for &byte in sentence.iter() {
         if let Some(message) = parser.parse_char(byte) {
-            println!("Received message type: {:?}", message.message_type);
-            println!("Timestamp: {}", message.timestamp);
-            println!("Field count: {}", message.field_count);
-            
-            // Access fields
-            if let Some(ref field) = message.fields[0] {
-                println!("First field: {:?}", field.as_str());
+            // Message is directly the parsed data
+            match message {
+                NmeaMessage::GGA(gga_data) => {
+                    println!("GGA message from {:?}", gga_data.talker_id);
+                    println!("Time: {}", gga_data.time());
+                    println!("Latitude: {} {}", gga_data.latitude, gga_data.lat_direction);
+                    println!("Longitude: {} {}", gga_data.longitude, gga_data.lon_direction);
+                    println!("Altitude: {:?} {:?}", gga_data.altitude, gga_data.altitude_units);
+                    println!("Satellites: {:?}", gga_data.num_satellites);
+                }
+                NmeaMessage::RMC(rmc_data) => {
+                    println!("RMC message from {:?}", rmc_data.talker_id);
+                    println!("Time: {}", rmc_data.time());
+                    println!("Status: {}", rmc_data.status);
+                    println!("Speed: {} knots", rmc_data.speed_knots);
+                }
+                _ => {} // Handle other message types
             }
         }
     }
     
     // Query last received GGA message
     if let Some(last_gga) = parser.get_last_message(MessageType::GGA) {
-        println!("Last GGA message timestamp: {}", last_gga.timestamp);
-        
-        // Extract structured parameters
+        // Use convenience method to extract GGA data
         if let Some(gga_data) = last_gga.as_gga() {
-            println!("Time: {}", gga_data.time);
+            println!("Time: {}", gga_data.time());
             println!("Constellation: {:?}", gga_data.talker_id);
             println!("Latitude: {} {}", gga_data.latitude, gga_data.lat_direction);
             println!("Longitude: {} {}", gga_data.longitude, gga_data.lon_direction);
@@ -92,8 +100,7 @@ fn main() {
     
     for &byte in stream.iter() {
         if let Some(message) = parser.parse_char(byte) {
-            println!("Parsed {:?} message with {} fields", 
-                     message.message_type, message.field_count);
+            println!("Parsed {:?} message", message.message_type());
         }
     }
     
@@ -176,27 +183,31 @@ The main parser structure.
 
 ### `NmeaMessage`
 
-Represents a parsed NMEA message.
+Enum representing a parsed NMEA message with associated data.
 
-#### Fields
+#### Variants
 
-- `message_type: MessageType` - The type of NMEA message
-- `fields: [Option<Field>; MAX_FIELDS]` - Array of parsed fields
-- `field_count: usize` - Number of fields in the message
-- `timestamp: u64` - Internal timestamp counter
+- `GGA(GgaData)` - Global Positioning System Fix Data
+- `RMC(RmcData)` - Recommended Minimum Navigation Information
+- `GSA(GsaData)` - GPS DOP and active satellites
+- `GSV(GsvData)` - GPS Satellites in view
+- `GLL(GllData)` - Geographic Position - Latitude/Longitude
+- `VTG(VtgData)` - Track Made Good and Ground Speed
 
 #### Methods
 
-- `as_gga() -> Option<GgaData>` - Extract GGA message parameters
-- `as_rmc() -> Option<RmcData>` - Extract RMC message parameters
-- `as_gsa() -> Option<GsaData>` - Extract GSA message parameters
-- `as_gsv() -> Option<GsvData>` - Extract GSV message parameters
-- `as_gll() -> Option<GllData>` - Extract GLL message parameters
-- `as_vtg() -> Option<VtgData>` - Extract VTG message parameters
+- `message_type() -> MessageType` - Get the message type identifier
+- `talker_id() -> TalkerId` - Get the talker ID (constellation identifier)
+- `as_gga() -> Option<&GgaData>` - Extract GGA message parameters
+- `as_rmc() -> Option<&RmcData>` - Extract RMC message parameters
+- `as_gsa() -> Option<&GsaData>` - Extract GSA message parameters
+- `as_gsv() -> Option<&GsvData>` - Extract GSV message parameters
+- `as_gll() -> Option<&GllData>` - Extract GLL message parameters
+- `as_vtg() -> Option<&VtgData>` - Extract VTG message parameters
 
 ### `MessageType`
 
-Enumeration of supported NMEA message types:
+Enumeration of NMEA message type identifiers:
 - `GGA` - Global Positioning System Fix Data
 - `RMC` - Recommended Minimum Navigation Information
 - `GSA` - GPS DOP and active satellites
@@ -205,15 +216,6 @@ Enumeration of supported NMEA message types:
 - `VTG` - Track Made Good and Ground Speed
 - `Unknown` - Unrecognized message type
 
-### `Field`
-
-Represents a field value in an NMEA message.
-
-#### Methods
-
-- `as_str() -> Option<&str>` - Get the field as a string slice
-- `as_bytes() -> &[u8]` - Get the field as a byte slice
-
 ### Parameter Structures
 
 The library provides typed parameter structures for each NMEA message type, allowing structured access to message-specific fields.
@@ -221,7 +223,7 @@ The library provides typed parameter structures for each NMEA message type, allo
 #### `GgaData`
 
 Global Positioning System Fix Data parameters:
-- `time` - **Mandatory** - UTC time (hhmmss format)
+- `time()` - **Mandatory** - UTC time (hhmmss format) - accessed via method
 - `latitude` - **Mandatory** - Latitude value
 - `lat_direction` - **Mandatory** - N or S
 - `longitude` - **Mandatory** - Longitude value
@@ -234,14 +236,14 @@ Global Positioning System Fix Data parameters:
 - `geoid_separation` - *Optional* - Height of geoid above WGS84 ellipsoid
 - `geoid_units` - *Optional* - Units of geoid separation
 - `age_of_diff` - *Optional* - Age of differential GPS data
-- `diff_station_id` - *Optional* - Differential reference station ID
+- `diff_station_id()` - *Optional* - Differential reference station ID - accessed via method
 
-**Note:** If any mandatory field is missing or cannot be parsed, `as_gga()` returns `None`.
+**Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
 #### `RmcData`
 
 Recommended Minimum Navigation Information parameters:
-- `time` - **Mandatory** - UTC time (hhmmss format)
+- `time()` - **Mandatory** - UTC time (hhmmss format) - accessed via method
 - `status` - **Mandatory** - Status (A=active/valid, V=void/invalid)
 - `latitude` - **Mandatory** - Latitude value
 - `lat_direction` - **Mandatory** - N or S
@@ -249,11 +251,11 @@ Recommended Minimum Navigation Information parameters:
 - `lon_direction` - **Mandatory** - E or W
 - `speed_knots` - **Mandatory** - Speed over ground in knots
 - `track_angle` - **Mandatory** - Track angle in degrees
-- `date` - **Mandatory** - Date (ddmmyy format)
+- `date()` - **Mandatory** - Date (ddmmyy format) - accessed via method
 - `magnetic_variation` - *Optional* - Magnetic variation
 - `mag_var_direction` - *Optional* - E or W
 
-**Note:** If any mandatory field is missing or cannot be parsed, `as_rmc()` returns `None`.
+**Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
 #### `GsaData`
 
@@ -290,10 +292,10 @@ Geographic Position parameters:
 - `lat_direction` - **Mandatory** - N or S
 - `longitude` - **Mandatory** - Longitude value
 - `lon_direction` - **Mandatory** - E or W
-- `time` - **Mandatory** - UTC time (hhmmss format)
+- `time()` - **Mandatory** - UTC time (hhmmss format) - accessed via method
 - `status` - **Mandatory** - Status (A=active/valid, V=void/invalid)
 
-**Note:** If any mandatory field is missing or cannot be parsed, `as_gll()` returns `None`.
+**Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
 #### `VtgData`
 
