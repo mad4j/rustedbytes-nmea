@@ -94,16 +94,15 @@ impl ParsedSentence {
     /// ```
     /// use rustedbytes_nmea::{NmeaParser, MessageType};
     ///
-    /// let mut parser = NmeaParser::new();
+    /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
     ///
-    /// for &c in sentence.iter() {
-    ///     if let Some(msg) = parser.parse_char(c) {
-    ///         if let Some(gsa) = msg.as_gsa() {
-    ///             assert_eq!(gsa.mode, 'A');
-    ///             assert_eq!(gsa.fix_type, 3);
-    ///             assert_eq!(gsa.satellite_ids[0], Some(4));
-    ///         }
+    /// let (result, _consumed) = parser.parse_bytes(sentence);
+    /// if let Ok(Some(msg)) = result {
+    ///     if let Some(gsa) = msg.as_gsa() {
+    ///         assert_eq!(gsa.mode, 'A');
+    ///         assert_eq!(gsa.fix_type, 3);
+    ///         assert_eq!(gsa.satellite_ids[0], Some(4));
     ///     }
     /// }
     /// ```
@@ -147,15 +146,10 @@ mod tests {
 
     #[test]
     fn test_gsa_complete_message() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -177,15 +171,10 @@ mod tests {
 
     #[test]
     fn test_gsa_manual_mode() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,M,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -198,15 +187,10 @@ mod tests {
 
     #[test]
     fn test_gsa_2d_fix() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,2,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -219,15 +203,10 @@ mod tests {
 
     #[test]
     fn test_gsa_no_fix() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,1,,,,,,,,,,,,,,,*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -241,15 +220,10 @@ mod tests {
 
     #[test]
     fn test_gsa_partial_satellites() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,01,,,,,,,,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -264,15 +238,10 @@ mod tests {
 
     #[test]
     fn test_gsa_all_satellites() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,01,02,03,04,05,06,07,08,09,10,11,12,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -287,15 +256,10 @@ mod tests {
 
     #[test]
     fn test_gsa_without_dop() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,,,*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -310,15 +274,10 @@ mod tests {
 
     #[test]
     fn test_gsa_missing_mode() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -326,15 +285,10 @@ mod tests {
 
     #[test]
     fn test_gsa_missing_fix_type() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -342,15 +296,10 @@ mod tests {
 
     #[test]
     fn test_gsa_dop_precision() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -365,16 +314,11 @@ mod tests {
 
     #[test]
     fn test_gsa_different_talker_id() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // GNGSA is multi-GNSS
         let sentence = b"$GNGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -387,16 +331,11 @@ mod tests {
 
     #[test]
     fn test_gsa_constellation_tracking() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         
         // Test BeiDou
         let bd_sentence = b"$BDGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
-        let mut bd_result = None;
-        for &c in bd_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                bd_result = Some(msg);
-            }
-        }
+        let bd_result = parser.parse_sentence_complete(bd_sentence);
         assert!(bd_result.is_some());
         let bd_msg = bd_result.unwrap();
         let bd_gsa = bd_msg.as_gsa().unwrap();
@@ -404,12 +343,7 @@ mod tests {
         
         // Test QZSS
         let qz_sentence = b"$QZGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
-        let mut qz_result = None;
-        for &c in qz_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                qz_result = Some(msg);
-            }
-        }
+        let qz_result = parser.parse_sentence_complete(qz_sentence);
         assert!(qz_result.is_some());
         let qz_msg = qz_result.unwrap();
         let qz_gsa = qz_msg.as_gsa().unwrap();

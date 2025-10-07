@@ -89,15 +89,14 @@ impl ParsedSentence {
     /// ```
     /// use rustedbytes_nmea::{NmeaParser, MessageType};
     ///
-    /// let mut parser = NmeaParser::new();
+    /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
     ///
-    /// for &c in sentence.iter() {
-    ///     if let Some(msg) = parser.parse_char(c) {
-    ///         if let Some(gll) = msg.as_gll() {
-    ///             assert_eq!(gll.latitude, 4916.45);
-    ///             assert_eq!(gll.status, 'A');
-    ///         }
+    /// let (result, _consumed) = parser.parse_bytes(sentence);
+    /// if let Ok(Some(msg)) = result {
+    ///     if let Some(gll) = msg.as_gll() {
+    ///         assert_eq!(gll.latitude, 4916.45);
+    ///         assert_eq!(gll.status, 'A');
     ///     }
     /// }
     /// ```
@@ -139,15 +138,10 @@ mod tests {
 
     #[test]
     fn test_gll_complete_message() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -165,15 +159,10 @@ mod tests {
 
     #[test]
     fn test_gll_void_status() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,V*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -186,15 +175,10 @@ mod tests {
 
     #[test]
     fn test_gll_south_east() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,3723.2475,S,14507.3647,E,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -208,15 +192,10 @@ mod tests {
 
     #[test]
     fn test_gll_missing_latitude() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,,N,12311.12,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -224,15 +203,10 @@ mod tests {
 
     #[test]
     fn test_gll_missing_longitude() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -240,15 +214,10 @@ mod tests {
 
     #[test]
     fn test_gll_missing_time() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -256,15 +225,10 @@ mod tests {
 
     #[test]
     fn test_gll_missing_status() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -272,15 +236,10 @@ mod tests {
 
     #[test]
     fn test_gll_invalid_latitude() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,INVALID,N,12311.12,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -288,15 +247,10 @@ mod tests {
 
     #[test]
     fn test_gll_numeric_precision() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -310,15 +264,10 @@ mod tests {
 
     #[test]
     fn test_gll_high_precision_coordinates() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.453789,N,12311.125678,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -332,16 +281,11 @@ mod tests {
 
     #[test]
     fn test_gll_different_talker_id() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // GNGLL is multi-GNSS
         let sentence = b"$GNGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -354,16 +298,11 @@ mod tests {
 
     #[test]
     fn test_gll_all_constellation_types() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         
         // Test GPS
         let gp_sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
-        let mut gp_result = None;
-        for &c in gp_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gp_result = Some(msg);
-            }
-        }
+        let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_gll = gp_msg.as_gll().unwrap();
@@ -371,12 +310,7 @@ mod tests {
         
         // Test BeiDou (GB)
         let gb_sentence = b"$GBGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
-        let mut gb_result = None;
-        for &c in gb_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gb_result = Some(msg);
-            }
-        }
+        let gb_result = parser.parse_sentence_complete(gb_sentence);
         assert!(gb_result.is_some());
         let gb_msg = gb_result.unwrap();
         let gb_gll = gb_msg.as_gll().unwrap();
@@ -385,15 +319,10 @@ mod tests {
 
     #[test]
     fn test_gll_time_with_decimals() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444.50,A*1D\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();

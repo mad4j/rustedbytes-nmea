@@ -110,16 +110,15 @@ impl ParsedSentence {
     /// ```
     /// use rustedbytes_nmea::{NmeaParser, MessageType};
     ///
-    /// let mut parser = NmeaParser::new();
+    /// let parser = NmeaParser::new();
     /// let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
     ///
-    /// for &c in sentence.iter() {
-    ///     if let Some(msg) = parser.parse_char(c) {
-    ///         if let Some(rmc) = msg.as_rmc() {
-    ///             assert_eq!(rmc.time(), "123519");
-    ///             assert_eq!(rmc.status, 'A');
-    ///             assert_eq!(rmc.speed_knots, 22.4);
-    ///         }
+    /// let (result, _consumed) = parser.parse_bytes(sentence);
+    /// if let Ok(Some(msg)) = result {
+    ///     if let Some(rmc) = msg.as_rmc() {
+    ///         assert_eq!(rmc.time(), "123519");
+    ///         assert_eq!(rmc.status, 'A');
+    ///         assert_eq!(rmc.speed_knots, 22.4);
     ///     }
     /// }
     /// ```
@@ -176,15 +175,10 @@ mod tests {
 
     #[test]
     fn test_rmc_complete_message() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -207,15 +201,10 @@ mod tests {
 
     #[test]
     fn test_rmc_void_status() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,V,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -228,15 +217,10 @@ mod tests {
 
     #[test]
     fn test_rmc_without_magnetic_variation() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,,*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -250,15 +234,10 @@ mod tests {
 
     #[test]
     fn test_rmc_missing_time() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -266,15 +245,10 @@ mod tests {
 
     #[test]
     fn test_rmc_missing_status() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -282,15 +256,10 @@ mod tests {
 
     #[test]
     fn test_rmc_missing_date() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -298,15 +267,10 @@ mod tests {
 
     #[test]
     fn test_rmc_missing_speed() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -314,15 +278,10 @@ mod tests {
 
     #[test]
     fn test_rmc_missing_track_angle() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         // Should return None because a mandatory field is missing
         assert!(result.is_none());
@@ -330,15 +289,10 @@ mod tests {
 
     #[test]
     fn test_rmc_zero_speed() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,0.0,0.0,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -352,15 +306,10 @@ mod tests {
 
     #[test]
     fn test_rmc_numeric_precision() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -376,16 +325,11 @@ mod tests {
 
     #[test]
     fn test_rmc_different_talker_id() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         // GNRMC is multi-GNSS
         let sentence = b"$GNRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
 
-        let mut result = None;
-        for &c in sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                result = Some(msg);
-            }
-        }
+        let result = parser.parse_sentence_complete(sentence);
 
         assert!(result.is_some());
         let msg = result.unwrap();
@@ -398,16 +342,11 @@ mod tests {
 
     #[test]
     fn test_rmc_multiple_constellations() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         
         // Test GPS
         let gp_sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
-        let mut gp_result = None;
-        for &c in gp_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gp_result = Some(msg);
-            }
-        }
+        let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_rmc = gp_msg.as_rmc().unwrap();
@@ -415,12 +354,7 @@ mod tests {
         
         // Test GLONASS
         let gl_sentence = b"$GLRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
-        let mut gl_result = None;
-        for &c in gl_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                gl_result = Some(msg);
-            }
-        }
+        let gl_result = parser.parse_sentence_complete(gl_sentence);
         assert!(gl_result.is_some());
         let gl_msg = gl_result.unwrap();
         let gl_rmc = gl_msg.as_rmc().unwrap();
@@ -428,12 +362,7 @@ mod tests {
         
         // Test Galileo
         let ga_sentence = b"$GARMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
-        let mut ga_result = None;
-        for &c in ga_sentence.iter() {
-            if let Some(msg) = parser.parse_char(c) {
-                ga_result = Some(msg);
-            }
-        }
+        let ga_result = parser.parse_sentence_complete(ga_sentence);
         assert!(ga_result.is_some());
         let ga_msg = ga_result.unwrap();
         let ga_rmc = ga_msg.as_rmc().unwrap();
