@@ -55,6 +55,32 @@ $<talker_id><sentence_id>,<field_1>,<field_2>,...,<field_n>*<checksum><CR><LF>
   - `GN` - Multi-GNSS (combined systems)
   - `QZ` - QZSS (Japan)
 
+**What is a "Combined Talker ID" (GN)?**
+
+Modern GNSS receivers can track satellites from multiple constellations simultaneously. When a receiver combines data from GPS, GLONASS, Galileo, BeiDou, and other systems to compute a single position fix, it uses the `GN` (Multi-GNSS or Combined) talker ID.
+
+**Benefits of Multi-GNSS (GN):**
+- **More satellites available**: Combines satellites from all systems (GPS, GLONASS, Galileo, BeiDou, etc.)
+- **Better accuracy**: More satellites generally means better position accuracy
+- **Improved availability**: Position fix in challenging environments (urban canyons, forests)
+- **Faster time-to-first-fix**: More satellites = faster initial lock
+- **Better geometry**: Satellites from multiple systems provide better spatial distribution
+
+**Example Comparison:**
+```
+$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+  ^^ GPS only - using 8 GPS satellites
+
+$GNGGA,123519,4807.038,N,01131.000,E,1,15,0.6,545.4,M,46.9,M,,*47
+  ^^ Multi-GNSS - using 15 satellites from GPS+GLONASS+Galileo+BeiDou
+     Note: Better HDOP (0.6 vs 0.9) due to more satellites
+```
+
+**When to use which:**
+- Use `GN` messages when available for best accuracy and reliability
+- Use constellation-specific messages (`GP`, `GL`, `GA`, `GB`) when you need to analyze or compare individual GNSS systems
+- Some receivers output both `GN` (combined) and constellation-specific messages
+
 #### 3. Sentence ID (3 characters)
 - Identifies the message type
 - Examples:
@@ -209,25 +235,187 @@ If the direction is South or West, negate the result.
 $GPGGA,hhmmss.ss,llll.ll,a,yyyyy.yy,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh
 ```
 
-**Key Fields:**
-- UTC time
-- Latitude and longitude
-- Fix quality (0=invalid, 1=GPS, 2=DGPS, etc.)
-- Number of satellites
-- HDOP (horizontal dilution of precision)
-- Altitude above mean sea level
-- Geoid separation
-
 **Example:**
 ```
 $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
 ```
 
+---
+
+#### GGA Field Descriptions
+
+**Field 1: UTC Time (hhmmss.ss)**
+- Format: Hours, minutes, seconds with optional decimal
+- Always in UTC (Coordinated Universal Time), not local time
+- Example: `123519` = 12:35:19 UTC
+- Example: `123519.50` = 12:35:19.50 UTC
+- **Mandatory field**
+
+**Field 2-3: Latitude (llll.ll, a)**
+- Field 2: Latitude value in DDMM.MMMM format
+  - DD = degrees (00-90)
+  - MM.MMMM = minutes with decimal
+- Field 3: Direction - `N` (North) or `S` (South)
+- Example: `4807.038,N` = 48°07.038' North = 48.1173° N (decimal)
+- **Mandatory fields**
+
+**Field 4-5: Longitude (yyyyy.yy, a)**
+- Field 4: Longitude value in DDDMM.MMMM format
+  - DDD = degrees (000-180)
+  - MM.MMMM = minutes with decimal
+- Field 5: Direction - `E` (East) or `W` (West)
+- Example: `01131.000,E` = 11°31.000' East = 11.5167° E (decimal)
+- **Mandatory fields**
+
+**Field 6: Fix Quality Indicator**
+
+This field indicates the quality and type of the position fix:
+
+| Value | Description | Accuracy | Example Use Case |
+|-------|-------------|----------|------------------|
+| **0** | **Invalid/No Fix** | N/A | GPS searching for satellites, position data unreliable |
+| **1** | **GPS Fix (SPS)** | ~5-10m | Standard GPS fix, normal operation, consumer devices |
+| **2** | **DGPS Fix** | ~1-3m | Differential GPS with ground station corrections, marine navigation |
+| **3** | **PPS Fix** | <10m | Precise Positioning Service, military/authorized users only |
+| **4** | **RTK Fixed** | 1-2cm | Real-Time Kinematic with fixed ambiguities, surveying, precision agriculture |
+| **5** | **RTK Float** | ~10-50cm | RTK with floating ambiguities, moving towards fixed solution |
+| **6** | **Estimated/Dead Reckoning** | Varies | Position estimated from previous data, no satellite fix |
+| **7** | **Manual Input** | N/A | Position entered manually, not from satellites |
+| **8** | **Simulation Mode** | N/A | Simulator/test mode, not real GPS data |
+| **9** | **WAAS/SBAS** | ~1-3m | Wide Area Augmentation System (North America), EGNOS (Europe), MSAS (Japan) |
+
+**Understanding Fix Quality - Practical Examples:**
+
+- **Fix Quality = 0**: "Searching for satellites..." - Don't use position data
+  ```
+  $GPGGA,123519,,,,,0,00,,,,,,,*47
+  // No position data, receiver is still acquiring satellites
+  ```
+
+- **Fix Quality = 1**: "Standard GPS fix" - Normal consumer GPS operation
+  ```
+  $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+  // Typical smartphone or car navigation accuracy (5-10 meters)
+  ```
+
+- **Fix Quality = 2**: "DGPS/SBAS fix" - Improved accuracy with corrections
+  ```
+  $GPGGA,123519,4807.038,N,01131.000,E,2,08,0.7,545.4,M,46.9,M,12.3,0120*47
+  // Better accuracy (1-3 meters), often in maritime or aviation
+  ```
+
+- **Fix Quality = 4**: "RTK Fixed" - Centimeter-level precision
+  ```
+  $GPGGA,123519,4807.038,N,01131.000,E,4,12,0.5,545.4,M,46.9,M,1.2,0120*47
+  // Surveying-grade accuracy (1-2 cm), used in construction and agriculture
+  ```
+
+**Always validate fix quality before using position data:**
+```rust
+if gga_data.fix_quality == 0 {
+    println!("No GPS fix - position invalid");
+    return;
+}
+```
+
+**Field 7: Number of Satellites**
+- Count of satellites being used for the position fix
+- More satellites generally means better accuracy
+- Typical values:
+  - 4-6 satellites: Minimum for 3D fix, moderate accuracy
+  - 7-10 satellites: Good fix with good accuracy
+  - 11+ satellites: Excellent fix, best accuracy (often Multi-GNSS)
+- Example: `08` = 8 satellites in use
+- **Optional field** (may be empty)
+
+**Field 8: HDOP (Horizontal Dilution of Precision)**
+- Measure of the geometric quality of the GPS satellite configuration
+- Lower values = better geometry = more accurate position
+- Values interpretation:
+  - < 1: Ideal (rarely seen)
+  - 1-2: Excellent
+  - 2-5: Good (typical for normal operation)
+  - 5-10: Moderate (acceptable)
+  - 10-20: Fair (use with caution)
+  - \> 20: Poor (unreliable)
+- Example: `0.9` = Excellent satellite geometry
+- **Optional field**
+- Note: HDOP does not indicate fix quality, only satellite geometry
+
+**Field 9-10: Altitude (x.x, M)**
+- Field 9: Altitude above mean sea level (MSL)
+- Field 10: Units (usually `M` for meters, rarely `F` for feet)
+- Example: `545.4,M` = 545.4 meters above sea level
+- Important: This is altitude above the geoid (mean sea level), not WGS84 ellipsoid
+- **Optional fields**
+
+**Field 11-12: Geoid Separation (x.x, M)**
+- Field 11: Height of geoid (mean sea level) above WGS84 ellipsoid
+- Field 12: Units (usually `M` for meters)
+- Positive values: Geoid is above ellipsoid
+- Negative values: Geoid is below ellipsoid
+- Example: `46.9,M` = Geoid is 46.9 meters above WGS84 ellipsoid
+- **Optional fields**
+- **Relationship**: Ellipsoid Height = MSL Altitude + Geoid Separation
+
+**Field 13: Age of Differential Data**
+- Time in seconds since last DGPS/RTK update
+- Only relevant when fix quality is 2 (DGPS), 4 (RTK Fixed), or 5 (RTK Float)
+- Typical values: 0-60 seconds
+- Older data (>30s) may indicate degraded DGPS accuracy
+- Empty when not using differential corrections
+- **Optional field**
+
+**Field 14: Differential Station ID**
+- ID of the DGPS/RTK base station providing corrections
+- 4-digit identifier (0000-1023)
+- Example: `0120` = Base station ID 120
+- Empty when not using differential corrections
+- **Optional field**
+
+---
+
+#### Complete GGA Example Breakdown
+
+```
+$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+│  │   │      │        │ │         │ │ │  │   │     │ │    │ │  │
+│  │   │      │        │ │         │ │ │  │   │     │ │    │ │  └─ Checksum
+│  │   │      │        │ │         │ │ │  │   │     │ │    │ └──── Diff Station ID (empty)
+│  │   │      │        │ │         │ │ │  │   │     │ │    └─────── Age of Diff (empty)
+│  │   │      │        │ │         │ │ │  │   │     │ └──────────── Geoid units
+│  │   │      │        │ │         │ │ │  │   │     └─────────────── Geoid separation (46.9m)
+│  │   │      │        │ │         │ │ │  │   └───────────────────── Altitude units
+│  │   │      │        │ │         │ │ │  └───────────────────────── Altitude (545.4m MSL)
+│  │   │      │        │ │         │ │ └──────────────────────────── HDOP (0.9 - Excellent)
+│  │   │      │        │ │         │ └─────────────────────────────── Satellites (8)
+│  │   │      │        │ │         └───────────────────────────────── Fix Quality (1=GPS)
+│  │   │      │        │ └─────────────────────────────────────────── Longitude direction (East)
+│  │   │      │        └───────────────────────────────────────────── Longitude (11°31.000'E)
+│  │   │      └────────────────────────────────────────────────────── Latitude direction (North)
+│  │   └───────────────────────────────────────────────────────────── Latitude (48°07.038'N)
+│  └───────────────────────────────────────────────────────────────── UTC Time (12:35:19)
+└──────────────────────────────────────────────────────────────────── Talker ID (GP=GPS)
+```
+
+**Interpretation:**
+- **Position**: 48.1173°N, 11.5167°E (converted to decimal degrees)
+- **Time**: 12:35:19 UTC
+- **Fix Type**: Standard GPS fix (quality = 1)
+- **Satellites**: Using 8 GPS satellites
+- **Accuracy**: Good geometry (HDOP = 0.9)
+- **Altitude**: 545.4 meters above mean sea level
+- **Geoid**: 46.9 meters above WGS84 ellipsoid
+- **Ellipsoid Height**: 545.4 + 46.9 = 592.3 meters above WGS84 ellipsoid
+
+---
+
 **Use Cases:**
-- Basic position determination
-- Quality monitoring
-- Altitude tracking
-- Multi-constellation comparison
+- **Navigation**: Basic position determination for consumer applications
+- **Quality Monitoring**: Checking fix quality and satellite count before using data
+- **Altitude Tracking**: Monitoring elevation in aviation, hiking, or surveying
+- **Multi-constellation Comparison**: Comparing accuracy between GPS, GLONASS, Galileo, etc.
+- **Differential GPS**: Monitoring DGPS/RTK corrections for high-precision applications
 
 ---
 
@@ -391,25 +579,36 @@ $GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48
 
 ## Multi-Constellation Support
 
-Modern GNSS receivers can use multiple satellite constellations simultaneously. The talker ID indicates the source:
+Modern GNSS receivers can use multiple satellite constellations simultaneously. The talker ID indicates the source (see [Talker ID explanation](#2-talker-id-2-characters) for more details about combined systems).
 
 ### Constellation-Specific Messages
 
-```
-$GPGGA,... - GPS only
-$GLGGA,... - GLONASS only
-$GAGGA,... - Galileo only
-$GBGGA,... - BeiDou only
-$QZGGA,... - QZSS only
-```
-
-### Combined Messages
+Each GNSS constellation can output its own messages:
 
 ```
-$GNGGA,... - Multi-GNSS (combined data)
+$GPGGA,... - GPS only (USA satellites)
+$GLGGA,... - GLONASS only (Russian satellites)
+$GAGGA,... - Galileo only (European satellites)
+$GBGGA,... - BeiDou only (Chinese satellites)
+$QZGGA,... - QZSS only (Japanese regional system)
 ```
 
-**Best Practice:** Use `GN` messages when available for best accuracy, as they leverage all available satellite systems.
+### Combined Messages (Multi-GNSS)
+
+When a receiver uses satellites from multiple constellations to compute a single position:
+
+```
+$GNGGA,... - Multi-GNSS (combined data from GPS+GLONASS+Galileo+BeiDou+others)
+```
+
+**Benefits of GN (Combined) Messages:**
+- Uses more satellites (e.g., 15-20 instead of 6-8)
+- Better position accuracy due to improved satellite geometry
+- More reliable fix in challenging environments (urban areas, forests)
+- Lower HDOP values indicating better geometry
+- Faster acquisition and re-acquisition of position
+
+**Best Practice:** Use `GN` messages when available for best accuracy, as they leverage all available satellite systems. Use constellation-specific messages when you need to analyze or debug individual GNSS system performance.
 
 ## Parsing Strategies
 
