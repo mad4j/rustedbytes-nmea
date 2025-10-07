@@ -3,9 +3,6 @@
 use crate::message::{Field, ParsedSentence, MAX_FIELDS};
 use crate::types::{MessageType, NmeaMessage, ParseError, TalkerId};
 
-/// Maximum buffer size for NMEA sentence
-const MAX_SENTENCE_LENGTH: usize = 82;
-
 /// Main NMEA parser structure (now stateless)
 pub struct NmeaParser {}
 
