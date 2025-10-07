@@ -51,7 +51,7 @@
 //! - HDOP: 1.3
 //! - VDOP: 2.1
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// GSA - GPS DOP and active satellites parameters
@@ -66,7 +66,7 @@ pub struct GsaData {
     pub vdop: Option<f32>,
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Extract GSA message parameters
     ///
     /// Parses the GSA (GPS DOP and Active Satellites) message and returns
@@ -320,10 +320,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsa = msg.as_gsa();
-        assert!(gsa.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -338,10 +336,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gsa = msg.as_gsa();
-        assert!(gsa.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -420,3 +416,4 @@ mod tests {
         assert_eq!(qz_gsa.talker_id, crate::types::TalkerId::QZ);
     }
 }
+

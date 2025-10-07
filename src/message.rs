@@ -25,19 +25,19 @@ pub use vtg::VtgData;
 /// Maximum number of fields in an NMEA sentence
 pub(crate) const MAX_FIELDS: usize = 20;
 
-/// Parsed NMEA message data
+/// Parsed NMEA sentence data (internal representation)
 ///
 /// Represents a single parsed NMEA sentence with its type, fields, and metadata.
+/// This is an internal structure used during parsing.
 #[derive(Debug, Clone)]
-pub struct NmeaMessage {
+pub(crate) struct ParsedSentence {
     pub message_type: MessageType,
     pub talker_id: TalkerId,
     pub fields: [Option<Field>; MAX_FIELDS],
     pub field_count: usize,
-    pub timestamp: u64,
 }
 
-impl NmeaMessage {
+impl ParsedSentence {
     /// Helper to get a field as a string slice
     pub(crate) fn get_field_str(&self, index: usize) -> Option<&str> {
         if index < self.field_count {

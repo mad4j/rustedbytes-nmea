@@ -45,14 +45,15 @@
 //! - Altitude: 545.4 meters above MSL
 //! - Geoid separation: 46.9 meters
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// GGA - Global Positioning System Fix Data parameters
 #[derive(Debug, Clone)]
-pub struct GgaData<'a> {
+pub struct GgaData {
     pub talker_id: TalkerId,
-    pub time: &'a str,
+    time_data: [u8; 16],
+    time_len: u8,
     pub latitude: f64,
     pub lat_direction: char,
     pub longitude: f64,
@@ -65,10 +66,27 @@ pub struct GgaData<'a> {
     pub geoid_separation: Option<f32>,
     pub geoid_units: Option<char>,
     pub age_of_diff: Option<f32>,
-    pub diff_station_id: Option<&'a str>,
+    diff_station_id_data: [u8; 8],
+    diff_station_id_len: u8,
 }
 
-impl NmeaMessage {
+impl GgaData {
+    /// Get time as string slice
+    pub fn time(&self) -> &str {
+        core::str::from_utf8(&self.time_data[..self.time_len as usize]).unwrap_or("")
+    }
+
+    /// Get differential station ID as string slice (if present)
+    pub fn diff_station_id(&self) -> Option<&str> {
+        if self.diff_station_id_len > 0 {
+            core::str::from_utf8(&self.diff_station_id_data[..self.diff_station_id_len as usize]).ok()
+        } else {
+            None
+        }
+    }
+}
+
+impl ParsedSentence {
     /// Extract GGA message parameters
     ///
     /// Parses the GGA (Global Positioning System Fix Data) message and returns
@@ -105,29 +123,47 @@ impl NmeaMessage {
     /// for &c in sentence.iter() {
     ///     if let Some(msg) = parser.parse_char(c) {
     ///         if let Some(gga) = msg.as_gga() {
-    ///             assert_eq!(gga.time, "123519");
+    ///             assert_eq!(gga.time(), "123519");
     ///             assert_eq!(gga.latitude, 4807.038);
     ///             assert_eq!(gga.fix_quality, 1);
     ///         }
     ///     }
     /// }
     /// ```
-    pub fn as_gga(&self) -> Option<GgaData<'_>> {
+    pub fn as_gga(&self) -> Option<GgaData> {
         if self.message_type != MessageType::GGA {
             return None;
         }
 
         // Validate mandatory fields
-        let time = self.get_field_str(1)?;
+        let time_str = self.get_field_str(1)?;
         let latitude = self.parse_field_f64(2)?;
         let lat_direction = self.parse_field_char(3)?;
         let longitude = self.parse_field_f64(4)?;
         let lon_direction = self.parse_field_char(5)?;
         let fix_quality = self.parse_field_u8(6)?;
 
+        // Copy time string to fixed array
+        let mut time_data = [0u8; 16];
+        let time_bytes = time_str.as_bytes();
+        let time_len = time_bytes.len().min(16) as u8;
+        time_data[..time_len as usize].copy_from_slice(&time_bytes[..time_len as usize]);
+
+        // Copy diff station ID if present
+        let mut diff_station_id_data = [0u8; 8];
+        let diff_station_id_len = if let Some(id_str) = self.get_field_str(14) {
+            let id_bytes = id_str.as_bytes();
+            let len = id_bytes.len().min(8) as u8;
+            diff_station_id_data[..len as usize].copy_from_slice(&id_bytes[..len as usize]);
+            len
+        } else {
+            0
+        };
+
         Some(GgaData {
             talker_id: self.talker_id,
-            time,
+            time_data,
+            time_len,
             latitude,
             lat_direction,
             longitude,
@@ -140,7 +176,8 @@ impl NmeaMessage {
             geoid_separation: self.parse_field_f32(11),
             geoid_units: self.parse_field_char(12),
             age_of_diff: self.parse_field_f32(13),
-            diff_station_id: self.get_field_str(14),
+            diff_station_id_data,
+            diff_station_id_len,
         })
     }
 }
@@ -167,7 +204,7 @@ mod tests {
         assert!(gga.is_some());
 
         let gga_data = gga.unwrap();
-        assert_eq!(gga_data.time, "123519");
+        assert_eq!(gga_data.time(), "123519");
         assert_eq!(gga_data.latitude, 4807.038);
         assert_eq!(gga_data.lat_direction, 'N');
         assert_eq!(gga_data.longitude, 1131.000);
@@ -180,7 +217,7 @@ mod tests {
         assert_eq!(gga_data.geoid_separation, Some(46.9));
         assert_eq!(gga_data.geoid_units, Some('M'));
         assert_eq!(gga_data.age_of_diff, None);
-        assert_eq!(gga_data.diff_station_id, None);
+        assert_eq!(gga_data.diff_station_id(), None);
     }
 
     #[test]
@@ -201,7 +238,7 @@ mod tests {
         assert!(gga.is_some());
 
         let gga_data = gga.unwrap();
-        assert_eq!(gga_data.time, "123519");
+        assert_eq!(gga_data.time(), "123519");
         assert_eq!(gga_data.latitude, 4807.038);
         assert_eq!(gga_data.fix_quality, 1);
         assert_eq!(gga_data.num_satellites, None);
@@ -221,10 +258,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because time is mandatory
+        assert!(result.is_none());
     }
 
     #[test]
@@ -239,10 +274,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -257,10 +290,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -275,10 +306,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -293,10 +322,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let gga = msg.as_gga();
-        assert!(gga.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -320,7 +347,7 @@ mod tests {
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.fix_quality, 2);
         assert_eq!(gga_data.age_of_diff, Some(3.2));
-        assert_eq!(gga_data.diff_station_id, Some("0120"));
+        assert_eq!(gga_data.diff_station_id(), Some("0120"));
     }
 
     #[test]
@@ -459,3 +486,4 @@ mod tests {
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GB);
     }
 }
+

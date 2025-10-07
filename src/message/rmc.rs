@@ -42,14 +42,15 @@
 //! - Date: March 23, 1994
 //! - Magnetic variation: 3.1° West
 
-use crate::message::NmeaMessage;
+use crate::message::ParsedSentence;
 use crate::types::{MessageType, TalkerId};
 
 /// RMC - Recommended Minimum Navigation Information parameters
 #[derive(Debug, Clone)]
-pub struct RmcData<'a> {
+pub struct RmcData {
     pub talker_id: TalkerId,
-    pub time: &'a str,
+    time_data: [u8; 16],
+    time_len: u8,
     pub status: char,
     pub latitude: f64,
     pub lat_direction: char,
@@ -57,12 +58,25 @@ pub struct RmcData<'a> {
     pub lon_direction: char,
     pub speed_knots: f32,
     pub track_angle: f32,
-    pub date: &'a str,
+    date_data: [u8; 8],
+    date_len: u8,
     pub magnetic_variation: Option<f32>,
     pub mag_var_direction: Option<char>,
 }
 
-impl NmeaMessage {
+impl RmcData {
+    /// Get time as string slice
+    pub fn time(&self) -> &str {
+        core::str::from_utf8(&self.time_data[..self.time_len as usize]).unwrap_or("")
+    }
+
+    /// Get date as string slice
+    pub fn date(&self) -> &str {
+        core::str::from_utf8(&self.date_data[..self.date_len as usize]).unwrap_or("")
+    }
+}
+
+impl ParsedSentence {
     /// Extract RMC message parameters
     ///
     /// Parses the RMC (Recommended Minimum Navigation Information) message and
@@ -102,20 +116,20 @@ impl NmeaMessage {
     /// for &c in sentence.iter() {
     ///     if let Some(msg) = parser.parse_char(c) {
     ///         if let Some(rmc) = msg.as_rmc() {
-    ///             assert_eq!(rmc.time, "123519");
+    ///             assert_eq!(rmc.time(), "123519");
     ///             assert_eq!(rmc.status, 'A');
     ///             assert_eq!(rmc.speed_knots, 22.4);
     ///         }
     ///     }
     /// }
     /// ```
-    pub fn as_rmc(&self) -> Option<RmcData<'_>> {
+    pub fn as_rmc(&self) -> Option<RmcData> {
         if self.message_type != MessageType::RMC {
             return None;
         }
 
         // Validate mandatory fields
-        let time = self.get_field_str(1)?;
+        let time_str = self.get_field_str(1)?;
         let status = self.parse_field_char(2)?;
         let latitude = self.parse_field_f64(3)?;
         let lat_direction = self.parse_field_char(4)?;
@@ -123,11 +137,24 @@ impl NmeaMessage {
         let lon_direction = self.parse_field_char(6)?;
         let speed_knots = self.parse_field_f32(7)?;
         let track_angle = self.parse_field_f32(8)?;
-        let date = self.get_field_str(9)?;
+        let date_str = self.get_field_str(9)?;
+
+        // Copy time to fixed array
+        let mut time_data = [0u8; 16];
+        let time_bytes = time_str.as_bytes();
+        let time_len = time_bytes.len().min(16) as u8;
+        time_data[..time_len as usize].copy_from_slice(&time_bytes[..time_len as usize]);
+
+        // Copy date to fixed array
+        let mut date_data = [0u8; 8];
+        let date_bytes = date_str.as_bytes();
+        let date_len = date_bytes.len().min(8) as u8;
+        date_data[..date_len as usize].copy_from_slice(&date_bytes[..date_len as usize]);
 
         Some(RmcData {
             talker_id: self.talker_id,
-            time,
+            time_data,
+            time_len,
             status,
             latitude,
             lat_direction,
@@ -135,7 +162,8 @@ impl NmeaMessage {
             lon_direction,
             speed_knots,
             track_angle,
-            date,
+            date_data,
+            date_len,
             magnetic_variation: self.parse_field_f32(10),
             mag_var_direction: self.parse_field_char(11),
         })
@@ -164,7 +192,7 @@ mod tests {
         assert!(rmc.is_some());
 
         let rmc_data = rmc.unwrap();
-        assert_eq!(rmc_data.time, "123519");
+        assert_eq!(rmc_data.time(), "123519");
         assert_eq!(rmc_data.status, 'A');
         assert_eq!(rmc_data.latitude, 4807.038);
         assert_eq!(rmc_data.lat_direction, 'N');
@@ -172,7 +200,7 @@ mod tests {
         assert_eq!(rmc_data.lon_direction, 'E');
         assert_eq!(rmc_data.speed_knots, 22.4);
         assert_eq!(rmc_data.track_angle, 84.4);
-        assert_eq!(rmc_data.date, "230394");
+        assert_eq!(rmc_data.date(), "230394");
         assert_eq!(rmc_data.magnetic_variation, Some(3.1));
         assert_eq!(rmc_data.mag_var_direction, Some('W'));
     }
@@ -232,10 +260,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -250,10 +276,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -268,10 +292,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -286,10 +308,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -304,10 +324,8 @@ mod tests {
             }
         }
 
-        assert!(result.is_some());
-        let msg = result.unwrap();
-        let rmc = msg.as_rmc();
-        assert!(rmc.is_none());
+        // Should return None because a mandatory field is missing
+        assert!(result.is_none());
     }
 
     #[test]
@@ -422,3 +440,4 @@ mod tests {
         assert_eq!(ga_rmc.talker_id, crate::types::TalkerId::GA);
     }
 }
+

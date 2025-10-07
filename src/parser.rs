@@ -1,7 +1,7 @@
 //! NMEA sentence parser implementation
 
-use crate::message::{Field, NmeaMessage, MAX_FIELDS};
-use crate::types::{MessageType, TalkerId};
+use crate::message::{Field, ParsedSentence, MAX_FIELDS};
+use crate::types::{MessageType, NmeaMessage, TalkerId};
 
 /// Maximum buffer size for NMEA sentence
 const MAX_SENTENCE_LENGTH: usize = 82;
@@ -22,7 +22,6 @@ impl StoredMessage {
 pub struct NmeaParser {
     buffer: [u8; MAX_SENTENCE_LENGTH],
     buffer_pos: usize,
-    timestamp_counter: u64,
     stored_gga: StoredMessage,
     stored_rmc: StoredMessage,
     stored_gsa: StoredMessage,
@@ -37,7 +36,6 @@ impl NmeaParser {
         NmeaParser {
             buffer: [0; MAX_SENTENCE_LENGTH],
             buffer_pos: 0,
-            timestamp_counter: 0,
             stored_gga: StoredMessage::new(),
             stored_rmc: StoredMessage::new(),
             stored_gsa: StoredMessage::new(),
@@ -117,19 +115,30 @@ impl NmeaParser {
             }
         }
 
-        self.timestamp_counter += 1;
-        let message = NmeaMessage {
+        let parsed = ParsedSentence {
             message_type,
             talker_id,
             fields,
             field_count,
-            timestamp: self.timestamp_counter,
+        };
+
+        // Convert parsed sentence to typed message
+        let message = match message_type {
+            MessageType::GGA => parsed.as_gga().map(NmeaMessage::GGA),
+            MessageType::RMC => parsed.as_rmc().map(NmeaMessage::RMC),
+            MessageType::GSA => parsed.as_gsa().map(NmeaMessage::GSA),
+            MessageType::GSV => parsed.as_gsv().map(NmeaMessage::GSV),
+            MessageType::GLL => parsed.as_gll().map(NmeaMessage::GLL),
+            MessageType::VTG => parsed.as_vtg().map(NmeaMessage::VTG),
+            MessageType::Unknown => None,
         };
 
         // Store the message
-        self.store_message(&message);
+        if let Some(ref msg) = message {
+            self.store_message(msg);
+        }
 
-        Some(message)
+        message
     }
 
     /// Identify the talker ID and message type from the sentence header
@@ -171,14 +180,13 @@ impl NmeaParser {
 
     /// Store a message based on its type
     fn store_message(&mut self, message: &NmeaMessage) {
-        let stored = match message.message_type {
-            MessageType::GGA => &mut self.stored_gga,
-            MessageType::RMC => &mut self.stored_rmc,
-            MessageType::GSA => &mut self.stored_gsa,
-            MessageType::GSV => &mut self.stored_gsv,
-            MessageType::GLL => &mut self.stored_gll,
-            MessageType::VTG => &mut self.stored_vtg,
-            MessageType::Unknown => return,
+        let stored = match message {
+            NmeaMessage::GGA(_) => &mut self.stored_gga,
+            NmeaMessage::RMC(_) => &mut self.stored_rmc,
+            NmeaMessage::GSA(_) => &mut self.stored_gsa,
+            NmeaMessage::GSV(_) => &mut self.stored_gsv,
+            NmeaMessage::GLL(_) => &mut self.stored_gll,
+            NmeaMessage::VTG(_) => &mut self.stored_vtg,
         };
         stored.message = Some(message.clone());
     }
@@ -200,17 +208,11 @@ impl NmeaParser {
     /// Reset the parser state
     pub fn reset(&mut self) {
         self.buffer_pos = 0;
-        self.timestamp_counter = 0;
     }
 
     #[cfg(test)]
     pub(crate) fn buffer_pos(&self) -> usize {
         self.buffer_pos
-    }
-
-    #[cfg(test)]
-    pub(crate) fn timestamp_counter(&self) -> u64 {
-        self.timestamp_counter
     }
 }
 
