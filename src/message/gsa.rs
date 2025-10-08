@@ -324,7 +324,7 @@ mod tests {
         let msg = result.unwrap();
         let gsa = msg.as_gsa();
         assert!(gsa.is_some());
-        
+
         let gsa_data = gsa.unwrap();
         assert_eq!(gsa_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -332,7 +332,7 @@ mod tests {
     #[test]
     fn test_gsa_constellation_tracking() {
         let parser = NmeaParser::new();
-        
+
         // Test BeiDou
         let bd_sentence = b"$BDGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
         let bd_result = parser.parse_sentence_complete(bd_sentence);
@@ -340,7 +340,7 @@ mod tests {
         let bd_msg = bd_result.unwrap();
         let bd_gsa = bd_msg.as_gsa().unwrap();
         assert_eq!(bd_gsa.talker_id, crate::types::TalkerId::BD);
-        
+
         // Test QZSS
         let qz_sentence = b"$QZGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
         let qz_result = parser.parse_sentence_complete(qz_sentence);
@@ -350,4 +350,3 @@ mod tests {
         assert_eq!(qz_gsa.talker_id, crate::types::TalkerId::QZ);
     }
 }
-

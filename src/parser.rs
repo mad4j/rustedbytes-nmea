@@ -13,44 +13,48 @@ impl NmeaParser {
     }
 
     /// Parse multiple bytes and return a parsed message if found, along with bytes consumed
-    /// 
+    ///
     /// Returns:
     /// - Ok((Some(message), bytes_consumed)) - Successfully parsed a complete message
     /// - Ok((None, bytes_consumed)) - Partial message, need more data (bytes_consumed will be 0 if no $ found)
     /// - Err((ParseError, bytes_consumed)) - Found complete message but it's invalid
-    /// 
+    ///
     /// The parser handles spurious characters before the '$' start marker by consuming them.
-    pub fn parse_bytes(&self, data: &[u8]) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)> {
+    pub fn parse_bytes(
+        &self,
+        data: &[u8],
+    ) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)> {
         // Find the start of a message
         let start_pos = data.iter().position(|&b| b == b'$');
-        
+
         if start_pos.is_none() {
             // No message start found, consume all spurious data
             return Ok((None, data.len()));
         }
-        
+
         let start_pos = start_pos.unwrap();
-        
+
         // Find the end of the message (either \n or \r)
         let end_pos = data[start_pos..]
             .iter()
             .position(|&b| b == b'\n' || b == b'\r');
-        
+
         if end_pos.is_none() {
             // Partial message - consume spurious data before $, but not the partial message
             return Ok((None, start_pos));
         }
-        
+
         let end_pos = start_pos + end_pos.unwrap();
         let sentence = &data[start_pos..end_pos];
-        
+
         // Parse the complete sentence
         match self.parse_sentence(sentence) {
             Some(msg) => {
                 // Successfully parsed - consume up to and including the line ending
                 // Need to skip any additional \r or \n characters
                 let mut consumed = end_pos + 1;
-                while consumed < data.len() && (data[consumed] == b'\r' || data[consumed] == b'\n') {
+                while consumed < data.len() && (data[consumed] == b'\r' || data[consumed] == b'\n')
+                {
                     consumed += 1;
                 }
                 Ok((Some(msg), consumed))
@@ -59,7 +63,8 @@ impl NmeaParser {
                 // Complete message but invalid (missing mandatory fields)
                 // Consume the invalid message
                 let mut consumed = end_pos + 1;
-                while consumed < data.len() && (data[consumed] == b'\r' || data[consumed] == b'\n') {
+                while consumed < data.len() && (data[consumed] == b'\r' || data[consumed] == b'\n')
+                {
                     consumed += 1;
                 }
                 Err((ParseError::InvalidMessage, consumed))
@@ -74,8 +79,11 @@ impl NmeaParser {
         }
 
         // Find sentence end (before checksum marker '*')
-        let sentence_end = buffer.iter().position(|&b| b == b'*').unwrap_or(buffer.len());
-        
+        let sentence_end = buffer
+            .iter()
+            .position(|&b| b == b'*')
+            .unwrap_or(buffer.len());
+
         if sentence_end < 7 {
             return None;
         }
@@ -121,6 +129,7 @@ impl NmeaParser {
             MessageType::GSV => parsed.as_gsv().map(NmeaMessage::GSV),
             MessageType::GLL => parsed.as_gll().map(NmeaMessage::GLL),
             MessageType::VTG => parsed.as_vtg().map(NmeaMessage::VTG),
+            MessageType::GNS => parsed.as_gns().map(NmeaMessage::GNS),
             MessageType::Unknown => None,
         }
     }
@@ -149,6 +158,7 @@ impl NmeaParser {
             b"GSV" => MessageType::GSV,
             b"GLL" => MessageType::GLL,
             b"VTG" => MessageType::VTG,
+            b"GNS" => MessageType::GNS,
             _ => MessageType::Unknown,
         };
 
@@ -183,16 +193,16 @@ mod tests {
     fn test_valid_gga_from_reference() {
         let parser = NmeaParser::new();
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::GGA);
-        
+
         let gga = msg.as_gga().expect("Should parse as GGA");
         assert_eq!(gga.time(), "123519");
         assert_eq!(gga.latitude, 4807.038);
@@ -205,16 +215,16 @@ mod tests {
     fn test_valid_rmc_from_reference() {
         let parser = NmeaParser::new();
         let sentence = b"$GPRMC,235947,A,5540.123,N,01231.456,E,000.0,360.0,130694,011.3,E*62\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::RMC);
-        
+
         let rmc = msg.as_rmc().expect("Should parse as RMC");
         assert_eq!(rmc.time(), "235947");
         assert_eq!(rmc.status, 'A');
@@ -226,16 +236,16 @@ mod tests {
     fn test_valid_gsa_from_reference() {
         let parser = NmeaParser::new();
         let sentence = b"$GPGSA,A,3,04,05,09,12,24,25,29,31,,,,,1.8,1.0,1.5*33\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::GSA);
-        
+
         let gsa = msg.as_gsa().expect("Should parse as GSA");
         assert_eq!(gsa.mode, 'A');
         assert_eq!(gsa.fix_type, 3);
@@ -245,16 +255,16 @@ mod tests {
     fn test_valid_gsv_from_reference() {
         let parser = NmeaParser::new();
         let sentence = b"$GPGSV,3,1,12,02,17,315,44,04,77,268,47,05,55,147,45,07,32,195,42*70\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::GSV);
-        
+
         let gsv = msg.as_gsv().expect("Should parse as GSV");
         assert_eq!(gsv.num_messages, 3);
         assert_eq!(gsv.message_num, 1);
@@ -267,7 +277,7 @@ mod tests {
         let parser = NmeaParser::new();
         // GGA with all empty fields (should fail - mandatory fields missing)
         let sentence = b"$GPGGA,123519,,,,,,0,00,99.99,,,,,,*48\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_err());
         let (err, _consumed) = result.unwrap_err();
@@ -279,16 +289,16 @@ mod tests {
         let parser = NmeaParser::new();
         // RMC with zero coordinates (valid but unusual)
         let sentence = b"$GPRMC,000000,A,0000.000,N,00000.000,E,000.0,000.0,000000,000.0,W*7C\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::RMC);
-        
+
         let rmc = msg.as_rmc().expect("Should parse as RMC");
         assert_eq!(rmc.latitude, 0.0);
         assert_eq!(rmc.longitude, 0.0);
@@ -299,7 +309,7 @@ mod tests {
         let parser = NmeaParser::new();
         // AIS message starts with '!' instead of '$' - should not parse
         let sentence = b"!AIVDM,1,1,,B,15N:;R0P00PD;88MD5MTDwwP0<0L,0*5C\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         // Should consume spurious data and return None
         assert!(result.is_ok());
@@ -314,7 +324,7 @@ mod tests {
         // Two messages concatenated - parser will parse up to the first checksum
         // and treat the rest as part of the same line
         let data = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47$GPRMC,235947,A,5540.123,N,01231.456,E,000.0,360.0,130694,011.3,E*62\r\n";
-        
+
         let result = parser.parse_bytes(data);
         // The parser finds the first * and parses up to that point as the first message
         // This successfully parses the GGA message
@@ -329,14 +339,14 @@ mod tests {
     #[test]
     fn test_edge_case_unsupported_message_types() {
         let parser = NmeaParser::new();
-        
+
         // GPTXT - text message (not supported)
         let txt_sentence = b"$GPTXT,01,01,02,Software Version 7.03.00 (12345)*6E\r\n";
         let result = parser.parse_bytes(txt_sentence);
         assert!(result.is_err());
         let (err, _consumed) = result.unwrap_err();
         assert_eq!(err, ParseError::InvalidMessage);
-        
+
         // GPXTE - cross-track error (not supported)
         let xte_sentence = b"$GPXTE,A,A,0.67,L,N*6F\r\n";
         let result2 = parser.parse_bytes(xte_sentence);
@@ -351,7 +361,7 @@ mod tests {
         let parser = NmeaParser::new();
         // Valid GGA structure but wrong checksum (*00 instead of *47)
         let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*00\r\n";
-        
+
         // Parser doesn't validate checksum, so this will parse successfully
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
@@ -365,13 +375,13 @@ mod tests {
         let parser = NmeaParser::new();
         // RMC with status 'V' (void/invalid) - still valid structure
         let sentence = b"$GPRMC,235947,V,5540.123,N,01231.456,E,000.0,360.0,130694,011.3,E*00\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         assert!(result.is_ok());
         let (msg, consumed) = result.unwrap();
         assert!(msg.is_some());
         assert_eq!(consumed, sentence.len());
-        
+
         let msg = msg.unwrap();
         let rmc = msg.as_rmc().expect("Should parse as RMC");
         assert_eq!(rmc.status, 'V'); // Status V means data is invalid but structure is valid
@@ -382,7 +392,7 @@ mod tests {
         let parser = NmeaParser::new();
         // GSA without checksum marker
         let sentence = b"$GPGSA,A,3,04,05,09,12,24,25,29,31,,,,,1.8,1.0,1.5\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         // Should still parse (checksum is optional in parsing)
         assert!(result.is_ok());
@@ -396,7 +406,7 @@ mod tests {
         let parser = NmeaParser::new();
         // GSV without starting '$'
         let sentence = b"GPGSV,3,1,12,02,17,315,44,04,77,268,47,05,55,147,45,07,32,195,42*70\r\n";
-        
+
         let result = parser.parse_bytes(sentence);
         // Should consume as spurious data and return None
         assert!(result.is_ok());
@@ -408,7 +418,7 @@ mod tests {
     #[test]
     fn test_multiple_valid_messages_in_sequence() {
         let parser = NmeaParser::new();
-        
+
         // Parse first message
         let gga = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
         let result1 = parser.parse_bytes(gga);
@@ -416,7 +426,7 @@ mod tests {
         let (msg1, consumed1) = result1.unwrap();
         assert!(msg1.is_some());
         assert_eq!(consumed1, gga.len());
-        
+
         // Parse second message
         let rmc = b"$GPRMC,235947,A,5540.123,N,01231.456,E,000.0,360.0,130694,011.3,E*62\r\n";
         let result2 = parser.parse_bytes(rmc);
@@ -424,7 +434,7 @@ mod tests {
         let (msg2, consumed2) = result2.unwrap();
         assert!(msg2.is_some());
         assert_eq!(consumed2, rmc.len());
-        
+
         // Parse third message
         let gsa = b"$GPGSA,A,3,04,05,09,12,24,25,29,31,,,,,1.8,1.0,1.5*33\r\n";
         let result3 = parser.parse_bytes(gsa);

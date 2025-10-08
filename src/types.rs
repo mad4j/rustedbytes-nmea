@@ -1,6 +1,6 @@
 //! NMEA message types and data structures
 
-use crate::message::{GgaData, GllData, GsaData, GsvData, RmcData, VtgData};
+use crate::message::{GgaData, GllData, GnsData, GsaData, GsvData, RmcData, VtgData};
 
 /// Parse error types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,6 +33,7 @@ pub enum MessageType {
     GSV, // GPS Satellites in view
     GLL, // Geographic Position - Latitude/Longitude
     VTG, // Track Made Good and Ground Speed
+    GNS, // GNSS Fix Data
     Unknown,
 }
 
@@ -45,6 +46,7 @@ pub enum NmeaMessage {
     GSV(GsvData),
     GLL(GllData),
     VTG(VtgData),
+    GNS(GnsData),
 }
 
 impl NmeaMessage {
@@ -57,6 +59,7 @@ impl NmeaMessage {
             NmeaMessage::GSV(_) => MessageType::GSV,
             NmeaMessage::GLL(_) => MessageType::GLL,
             NmeaMessage::VTG(_) => MessageType::VTG,
+            NmeaMessage::GNS(_) => MessageType::GNS,
         }
     }
 
@@ -69,6 +72,7 @@ impl NmeaMessage {
             NmeaMessage::GSV(d) => d.talker_id,
             NmeaMessage::GLL(d) => d.talker_id,
             NmeaMessage::VTG(d) => d.talker_id,
+            NmeaMessage::GNS(d) => d.talker_id,
         }
     }
 
@@ -120,6 +124,15 @@ impl NmeaMessage {
     /// Extract VTG data if this is a VTG message
     pub fn as_vtg(&self) -> Option<&VtgData> {
         if let NmeaMessage::VTG(data) = self {
+            Some(data)
+        } else {
+            None
+        }
+    }
+
+    /// Extract GNS data if this is a GNS message
+    pub fn as_gns(&self) -> Option<&GnsData> {
+        if let NmeaMessage::GNS(data) = self {
             Some(data)
         } else {
             None

@@ -388,7 +388,7 @@ mod tests {
         let msg = result.unwrap();
         let gsv = msg.as_gsv();
         assert!(gsv.is_some());
-        
+
         let gsv_data = gsv.unwrap();
         assert_eq!(gsv_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -396,26 +396,29 @@ mod tests {
     #[test]
     fn test_gsv_satellites_from_different_constellations() {
         let parser = NmeaParser::new();
-        
+
         // Test GPS satellites
-        let gp_sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+        let gp_sentence =
+            b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
         let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_gsv = gp_msg.as_gsv().unwrap();
         assert_eq!(gp_gsv.talker_id, crate::types::TalkerId::GP);
         assert_eq!(gp_gsv.satellites_in_view, 8);
-        
+
         // Test GLONASS satellites
-        let gl_sentence = b"$GLGSV,2,1,08,65,40,083,46,66,17,308,41,75,07,344,39,76,22,228,45*75\r\n";
+        let gl_sentence =
+            b"$GLGSV,2,1,08,65,40,083,46,66,17,308,41,75,07,344,39,76,22,228,45*75\r\n";
         let gl_result = parser.parse_sentence_complete(gl_sentence);
         assert!(gl_result.is_some());
         let gl_msg = gl_result.unwrap();
         let gl_gsv = gl_msg.as_gsv().unwrap();
         assert_eq!(gl_gsv.talker_id, crate::types::TalkerId::GL);
-        
+
         // Test Galileo satellites
-        let ga_sentence = b"$GAGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+        let ga_sentence =
+            b"$GAGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
         let ga_result = parser.parse_sentence_complete(ga_sentence);
         assert!(ga_result.is_some());
         let ga_msg = ga_result.unwrap();
@@ -446,4 +449,3 @@ mod tests {
         assert_eq!(gsv2_data.num_messages, 2);
     }
 }
-

@@ -336,7 +336,7 @@ mod tests {
         let msg = result.unwrap();
         let vtg = msg.as_vtg();
         assert!(vtg.is_some());
-        
+
         let vtg_data = vtg.unwrap();
         assert_eq!(vtg_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn test_vtg_mixed_constellation_data() {
         let parser = NmeaParser::new();
-        
+
         // Test GPS
         let gp_sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
         let gp_result = parser.parse_sentence_complete(gp_sentence);
@@ -353,7 +353,7 @@ mod tests {
         let gp_vtg = gp_msg.as_vtg().unwrap();
         assert_eq!(gp_vtg.talker_id, crate::types::TalkerId::GP);
         assert_eq!(gp_vtg.track_true, Some(54.7));
-        
+
         // Test GLONASS
         let gl_sentence = b"$GLVTG,154.7,T,134.4,M,015.5,N,028.7,K*48\r\n";
         let gl_result = parser.parse_sentence_complete(gl_sentence);

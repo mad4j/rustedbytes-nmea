@@ -291,7 +291,7 @@ mod tests {
         let msg = result.unwrap();
         let gll = msg.as_gll();
         assert!(gll.is_some());
-        
+
         let gll_data = gll.unwrap();
         assert_eq!(gll_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -299,7 +299,7 @@ mod tests {
     #[test]
     fn test_gll_all_constellation_types() {
         let parser = NmeaParser::new();
-        
+
         // Test GPS
         let gp_sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
         let gp_result = parser.parse_sentence_complete(gp_sentence);
@@ -307,7 +307,7 @@ mod tests {
         let gp_msg = gp_result.unwrap();
         let gp_gll = gp_msg.as_gll().unwrap();
         assert_eq!(gp_gll.talker_id, crate::types::TalkerId::GP);
-        
+
         // Test BeiDou (GB)
         let gb_sentence = b"$GBGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
         let gb_result = parser.parse_sentence_complete(gb_sentence);
@@ -333,4 +333,3 @@ mod tests {
         assert_eq!(gll_data.time(), "225444.50");
     }
 }
-

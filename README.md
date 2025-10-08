@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![Tests](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml/badge.svg)](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml)
-[![Test Count](https://img.shields.io/badge/tests-123-brightgreen.svg)]()
+[![Test Count](https://img.shields.io/badge/tests-130-brightgreen.svg)]()
 
 Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 
@@ -24,6 +24,7 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
   - GSV (GPS Satellites in view)
   - GLL (Geographic Position - Latitude/Longitude)
   - VTG (Track Made Good and Ground Speed)
+  - GNS (GNSS Fix Data)
 - Handles spurious characters between messages
 - Structured parameter extraction for each message type
 
@@ -214,6 +215,7 @@ Enum representing a parsed NMEA message with associated data.
 - `GSV(GsvData)` - GPS Satellites in view
 - `GLL(GllData)` - Geographic Position - Latitude/Longitude
 - `VTG(VtgData)` - Track Made Good and Ground Speed
+- `GNS(GnsData)` - GNSS Fix Data
 
 #### Methods
 
@@ -225,6 +227,7 @@ Enum representing a parsed NMEA message with associated data.
 - `as_gsv() -> Option<&GsvData>` - Extract GSV message parameters
 - `as_gll() -> Option<&GllData>` - Extract GLL message parameters
 - `as_vtg() -> Option<&VtgData>` - Extract VTG message parameters
+- `as_gns() -> Option<&GnsData>` - Extract GNS message parameters
 
 ### `MessageType`
 
@@ -235,6 +238,7 @@ Enumeration of NMEA message type identifiers:
 - `GSV` - GPS Satellites in view
 - `GLL` - Geographic Position - Latitude/Longitude
 - `VTG` - Track Made Good and Ground Speed
+- `GNS` - GNSS Fix Data
 - `Unknown` - Unrecognized message type
 
 ### Parameter Structures
@@ -331,6 +335,25 @@ Track Made Good and Ground Speed parameters (all fields are optional):
 - `speed_kph_indicator` - *Optional* - K (km/h)
 
 **Note:** VTG messages can be parsed even with all fields empty, as all fields are optional.
+
+#### `GnsData`
+
+GNSS Fix Data parameters:
+- `time()` - **Mandatory** - UTC time (hhmmss format) - accessed via method
+- `latitude` - **Mandatory** - Latitude value
+- `lat_direction` - **Mandatory** - N or S
+- `longitude` - **Mandatory** - Longitude value
+- `lon_direction` - **Mandatory** - E or W
+- `mode_indicator()` - **Mandatory** - Position fix mode for each GNSS system - accessed via method
+- `num_satellites` - **Mandatory** - Number of satellites in use
+- `hdop` - *Optional* - Horizontal Dilution of Precision
+- `altitude` - *Optional* - Altitude above mean sea level
+- `geoid_separation` - *Optional* - Height of geoid above WGS84 ellipsoid
+- `age_of_diff` - *Optional* - Age of differential GPS data
+- `diff_station_id()` - *Optional* - Differential reference station ID - accessed via method
+- `nav_status` - *Optional* - Navigation status indicator
+
+**Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
 ## NMEA 0183 Compliance
 
