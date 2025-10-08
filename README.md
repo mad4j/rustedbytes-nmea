@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-2021-orange.svg)](https://www.rust-lang.org)
 [![Tests](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml/badge.svg)](https://github.com/mad4j/rustedbytes-nmea/actions/workflows/test.yml)
-[![Test Count](https://img.shields.io/badge/tests-122-brightgreen.svg)]()
+[![Test Count](https://img.shields.io/badge/tests-120-brightgreen.svg)]()
 
 Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 
@@ -14,6 +14,7 @@ Rust `no_std` library for parsing NMEA messages from a GNSS receiver.
 - `no_std` compatible - can be used in embedded systems
 - **Stateless parser** - no internal buffers or state retention
 - **Multi-byte parsing** - parse multiple bytes at once with bytes consumed tracking
+- **Local time registration** - optionally record local reception time for each message
 - **Multiconstellation support** - tracks which GNSS constellation provided each message
   - GPS (GP), GLONASS (GL), Galileo (GA), BeiDou (GB/BD), Multi-GNSS (GN), QZSS (QZ)
 - Supports common NMEA message types:
@@ -132,6 +133,45 @@ fn main() {
 }
 ```
 
+### Local Time Registration
+
+The library supports recording the local reception time for each message. Since this is a `no_std` library, it cannot access system time directly. Instead, users provide timestamps when parsing:
+
+```rust
+use rustedbytes_nmea::NmeaParser;
+
+fn main() {
+    let parser = NmeaParser::new();
+    let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+    
+    // Get local timestamp from your system (milliseconds since some epoch)
+    // In std environments, you might use:
+    // use std::time::{SystemTime, UNIX_EPOCH};
+    // let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64;
+    
+    // For this example, we'll use a fixed timestamp
+    let local_timestamp_ms = 1234567890123u64;
+    
+    // Parse with timestamp
+    let result = parser.parse_bytes_with_timestamp(sentence, Some(local_timestamp_ms));
+    
+    if let Ok((Some(msg), _)) = result {
+        if let Some(gga) = msg.as_gga() {
+            println!("UTC time from GPS: {}", gga.time());
+            println!("Local reception time: {:?} ms", gga.local_timestamp_ms);
+        }
+    }
+}
+```
+
+**Benefits:**
+- Track message reception time independently from GPS time
+- Useful for timestamping data in your local system's time base
+- Works in embedded systems with RTCs or monotonic clocks
+- Allows correlation between GPS time and local system time
+
+**Note:** The timestamp is optional. If you use `parse_bytes()` instead of `parse_bytes_with_timestamp()`, all messages will have `local_timestamp_ms` set to `None`.
+
 ### Multiconstellation Support
 
 The library automatically tracks which GNSS constellation provided each message through the `talker_id` field:
@@ -193,6 +233,7 @@ The main parser structure. **The parser is now stateless** - it maintains no int
   - `Ok((None, bytes_consumed))` - Partial message (need more data) or consumed spurious characters
   - `Err((ParseError::InvalidMessage, bytes_consumed))` - Complete message but missing mandatory fields
   - `Err((ParseError::InvalidChecksum, bytes_consumed))` - Checksum verification failed
+- `parse_bytes_with_timestamp(data: &[u8], local_timestamp_ms: Option<u64>) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)>` - Parse bytes with local reception timestamp. Returns same as `parse_bytes()` but includes the timestamp in all message structures.
 
 ### `ParseError`
 
@@ -257,6 +298,7 @@ Global Positioning System Fix Data parameters:
 - `geoid_units` - *Optional* - Units of geoid separation
 - `age_of_diff` - *Optional* - Age of differential GPS data
 - `diff_station_id()` - *Optional* - Differential reference station ID - accessed via method
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 **Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
@@ -274,6 +316,7 @@ Recommended Minimum Navigation Information parameters:
 - `date()` - **Mandatory** - Date (ddmmyy format) - accessed via method
 - `magnetic_variation` - *Optional* - Magnetic variation
 - `mag_var_direction` - *Optional* - E or W
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 **Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
@@ -286,6 +329,7 @@ GPS DOP and active satellites parameters:
 - `pdop` - *Optional* - Position Dilution of Precision
 - `hdop` - *Optional* - Horizontal Dilution of Precision
 - `vdop` - *Optional* - Vertical Dilution of Precision
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 **Note:** If any mandatory field is missing or cannot be parsed, `as_gsa()` returns `None`.
 
@@ -296,6 +340,7 @@ GPS Satellites in view parameters:
 - `message_num` - **Mandatory** - Current message number
 - `satellites_in_view` - **Mandatory** - Total number of satellites in view
 - `satellite_info` - *Optional* - Array of up to 4 satellite information structures
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 Each `SatelliteInfo` contains:
 - `prn` - *Optional* - Satellite PRN number
@@ -314,6 +359,7 @@ Geographic Position parameters:
 - `lon_direction` - **Mandatory** - E or W
 - `time()` - **Mandatory** - UTC time (hhmmss format) - accessed via method
 - `status` - **Mandatory** - Status (A=active/valid, V=void/invalid)
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 **Note:** If any mandatory field is missing or cannot be parsed, the parser returns `None`.
 
@@ -328,6 +374,7 @@ Track Made Good and Ground Speed parameters (all fields are optional):
 - `speed_knots_indicator` - *Optional* - N (knots)
 - `speed_kph` - *Optional* - Speed in kilometers per hour
 - `speed_kph_indicator` - *Optional* - K (km/h)
+- `local_timestamp_ms` - *Optional* - Local reception timestamp in milliseconds (set by user during parsing)
 
 **Note:** VTG messages can be parsed even with all fields empty, as all fields are optional.
 

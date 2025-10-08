@@ -64,6 +64,8 @@ pub struct GsaData {
     pub pdop: Option<f32>,
     pub hdop: Option<f32>,
     pub vdop: Option<f32>,
+    /// Local reception timestamp in milliseconds (optional, set by user)
+    pub local_timestamp_ms: Option<u64>,
 }
 
 impl ParsedSentence {
@@ -136,6 +138,7 @@ impl ParsedSentence {
             pdop: self.parse_field(15),
             hdop: self.parse_field(16),
             vdop: self.parse_field(17),
+            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }

@@ -21,6 +21,42 @@ impl NmeaParser {
     /// 
     /// The parser handles spurious characters before the '$' start marker by consuming them.
     pub fn parse_bytes(&self, data: &[u8]) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)> {
+        self.parse_bytes_with_timestamp(data, None)
+    }
+
+    /// Parse multiple bytes with local timestamp and return a parsed message if found, along with bytes consumed
+    /// 
+    /// # Arguments
+    /// 
+    /// * `data` - The byte slice to parse
+    /// * `local_timestamp_ms` - Optional local reception timestamp in milliseconds (e.g., from system clock or RTC)
+    /// 
+    /// Returns:
+    /// - Ok((Some(message), bytes_consumed)) - Successfully parsed a complete message
+    /// - Ok((None, bytes_consumed)) - Partial message, need more data (bytes_consumed will be 0 if no $ found)
+    /// - Err((ParseError, bytes_consumed)) - Found complete message but it's invalid
+    /// 
+    /// The parser handles spurious characters before the '$' start marker by consuming them.
+    /// 
+    /// # Example
+    /// 
+    /// ```
+    /// use rustedbytes_nmea::NmeaParser;
+    /// 
+    /// let parser = NmeaParser::new();
+    /// let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+    /// 
+    /// // Parse with local timestamp (e.g., milliseconds since some epoch)
+    /// let local_time = 1234567890123u64; // User-provided timestamp
+    /// let result = parser.parse_bytes_with_timestamp(sentence, Some(local_time));
+    /// 
+    /// if let Ok((Some(msg), _)) = result {
+    ///     if let Some(gga) = msg.as_gga() {
+    ///         assert_eq!(gga.local_timestamp_ms, Some(local_time));
+    ///     }
+    /// }
+    /// ```
+    pub fn parse_bytes_with_timestamp(&self, data: &[u8], local_timestamp_ms: Option<u64>) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)> {
         // Find the start of a message
         let start_pos = data.iter().position(|&b| b == b'$');
         
@@ -45,7 +81,7 @@ impl NmeaParser {
         let sentence = &data[start_pos..end_pos];
         
         // Parse the complete sentence
-        match self.parse_sentence(sentence) {
+        match self.parse_sentence_with_timestamp(sentence, local_timestamp_ms) {
             Some(msg) => {
                 // Successfully parsed - consume up to and including the line ending
                 // Need to skip any additional \r or \n characters
@@ -68,7 +104,13 @@ impl NmeaParser {
     }
 
     /// Parse a complete NMEA sentence from a buffer
+    #[allow(dead_code)]
     fn parse_sentence(&self, buffer: &[u8]) -> Option<NmeaMessage> {
+        self.parse_sentence_with_timestamp(buffer, None)
+    }
+
+    /// Parse a complete NMEA sentence from a buffer with local timestamp
+    fn parse_sentence_with_timestamp(&self, buffer: &[u8], local_timestamp_ms: Option<u64>) -> Option<NmeaMessage> {
         if buffer.len() < 7 || buffer[0] != b'$' {
             return None;
         }
@@ -111,6 +153,7 @@ impl NmeaParser {
             talker_id,
             fields,
             field_count,
+            local_timestamp_ms,
         };
 
         // Convert parsed sentence to typed message
