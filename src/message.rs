@@ -35,7 +35,6 @@ pub(crate) struct ParsedSentence {
     pub talker_id: TalkerId,
     pub fields: [Option<Field>; MAX_FIELDS],
     pub field_count: usize,
-    pub local_timestamp_ms: Option<u64>,
 }
 
 impl ParsedSentence {

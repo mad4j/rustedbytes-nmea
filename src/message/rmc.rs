@@ -62,8 +62,6 @@ pub struct RmcData {
     date_len: u8,
     pub magnetic_variation: Option<f32>,
     pub mag_var_direction: Option<char>,
-    /// Local reception timestamp in milliseconds (optional, set by user)
-    pub local_timestamp_ms: Option<u64>,
 }
 
 impl RmcData {
@@ -167,7 +165,6 @@ impl ParsedSentence {
             date_len,
             magnetic_variation: self.parse_field(10),
             mag_var_direction: self.parse_field_char(11),
-            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }

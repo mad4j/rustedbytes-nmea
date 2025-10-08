@@ -69,8 +69,6 @@ pub struct VtgData {
     pub speed_knots_indicator: Option<char>,
     pub speed_kph: Option<f32>,
     pub speed_kph_indicator: Option<char>,
-    /// Local reception timestamp in milliseconds (optional, set by user)
-    pub local_timestamp_ms: Option<u64>,
 }
 
 impl ParsedSentence {
@@ -128,7 +126,6 @@ impl ParsedSentence {
             speed_knots_indicator: self.parse_field_char(6),
             speed_kph: self.parse_field(7),
             speed_kph_indicator: self.parse_field_char(8),
-            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }
