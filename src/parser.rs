@@ -104,6 +104,7 @@ impl NmeaParser {
     }
 
     /// Parse a complete NMEA sentence from a buffer
+    #[allow(dead_code)]
     fn parse_sentence(&self, buffer: &[u8]) -> Option<NmeaMessage> {
         self.parse_sentence_with_timestamp(buffer, None)
     }
