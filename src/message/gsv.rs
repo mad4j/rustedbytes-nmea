@@ -65,6 +65,8 @@ pub struct GsvData {
     pub message_num: u8,
     pub satellites_in_view: u8,
     pub satellite_info: [Option<SatelliteInfo>; 4],
+    /// Local reception timestamp in milliseconds (optional, set by user)
+    pub local_timestamp_ms: Option<u64>,
 }
 
 /// Information about a single satellite
@@ -178,6 +180,7 @@ impl ParsedSentence {
             message_num,
             satellites_in_view,
             satellite_info: [sat1, sat2, sat3, sat4],
+            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }

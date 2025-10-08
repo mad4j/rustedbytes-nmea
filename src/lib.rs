@@ -503,6 +503,125 @@ mod tests {
         let (err, _consumed) = result.unwrap_err();
         assert_eq!(err, ParseError::InvalidMessage);
     }
+
+    #[test]
+    fn test_parse_without_timestamp() {
+        let parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+
+        let result = parser.parse_bytes(sentence);
+        assert!(result.is_ok());
+        let (msg, _) = result.unwrap();
+        assert!(msg.is_some());
+        
+        let msg = msg.unwrap();
+        let gga = msg.as_gga().expect("Expected GGA message");
+        assert_eq!(gga.local_timestamp_ms, None);
+    }
+
+    #[test]
+    fn test_parse_with_timestamp() {
+        let parser = NmeaParser::new();
+        let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+        let timestamp = 1234567890123u64;
+
+        let result = parser.parse_bytes_with_timestamp(sentence, Some(timestamp));
+        assert!(result.is_ok());
+        let (msg, _) = result.unwrap();
+        assert!(msg.is_some());
+        
+        let msg = msg.unwrap();
+        let gga = msg.as_gga().expect("Expected GGA message");
+        assert_eq!(gga.local_timestamp_ms, Some(timestamp));
+    }
+
+    #[test]
+    fn test_all_message_types_with_timestamp() {
+        let parser = NmeaParser::new();
+        let timestamp = 9876543210987u64;
+
+        // Test GGA
+        let gga_sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
+        let result = parser.parse_bytes_with_timestamp(gga_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(gga) = msg.as_gga() {
+                assert_eq!(gga.local_timestamp_ms, Some(timestamp));
+            }
+        }
+
+        // Test RMC
+        let rmc_sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let result = parser.parse_bytes_with_timestamp(rmc_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(rmc) = msg.as_rmc() {
+                assert_eq!(rmc.local_timestamp_ms, Some(timestamp));
+            }
+        }
+
+        // Test GLL
+        let gll_sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n";
+        let result = parser.parse_bytes_with_timestamp(gll_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(gll) = msg.as_gll() {
+                assert_eq!(gll.local_timestamp_ms, Some(timestamp));
+            }
+        }
+
+        // Test GSA
+        let gsa_sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
+        let result = parser.parse_bytes_with_timestamp(gsa_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(gsa) = msg.as_gsa() {
+                assert_eq!(gsa.local_timestamp_ms, Some(timestamp));
+            }
+        }
+
+        // Test GSV
+        let gsv_sentence = b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n";
+        let result = parser.parse_bytes_with_timestamp(gsv_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(gsv) = msg.as_gsv() {
+                assert_eq!(gsv.local_timestamp_ms, Some(timestamp));
+            }
+        }
+
+        // Test VTG
+        let vtg_sentence = b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n";
+        let result = parser.parse_bytes_with_timestamp(vtg_sentence, Some(timestamp));
+        if let Ok((Some(msg), _)) = result {
+            if let Some(vtg) = msg.as_vtg() {
+                assert_eq!(vtg.local_timestamp_ms, Some(timestamp));
+            }
+        }
+    }
+
+    #[test]
+    fn test_multiple_messages_with_different_timestamps() {
+        let parser = NmeaParser::new();
+        let data = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n\
+                     $GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+
+        let timestamp1 = 1000000u64;
+        let timestamp2 = 2000000u64;
+
+        // Parse first message with first timestamp
+        let result1 = parser.parse_bytes_with_timestamp(data, Some(timestamp1));
+        assert!(result1.is_ok());
+        let (msg1, consumed1) = result1.unwrap();
+        assert!(msg1.is_some());
+        let msg1 = msg1.unwrap();
+        let gga = msg1.as_gga().expect("Expected GGA message");
+        assert_eq!(gga.local_timestamp_ms, Some(timestamp1));
+
+        // Parse second message with second timestamp
+        let result2 = parser.parse_bytes_with_timestamp(&data[consumed1..], Some(timestamp2));
+        assert!(result2.is_ok());
+        let (msg2, _consumed2) = result2.unwrap();
+        assert!(msg2.is_some());
+        let msg2 = msg2.unwrap();
+        let rmc = msg2.as_rmc().expect("Expected RMC message");
+        assert_eq!(rmc.local_timestamp_ms, Some(timestamp2));
+    }
 }
 
 
