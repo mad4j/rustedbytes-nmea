@@ -47,10 +47,10 @@ fn main() {
     let data = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
     
     // Parse the data
-    let (result, bytes_consumed) = parser.parse_bytes(data);
+    let result = parser.parse_bytes(data);
     
     match result {
-        Ok(Some(message)) => {
+        Ok((Some(message), bytes_consumed)) => {
             // Successfully parsed a complete message
             match message {
                 NmeaMessage::GGA(gga_data) => {
@@ -71,15 +71,15 @@ fn main() {
             }
             println!("Consumed {} bytes", bytes_consumed);
         }
-        Ok(None) => {
+        Ok((None, bytes_consumed)) => {
             // Partial message or spurious data - need more bytes
             println!("Partial message, consumed {} bytes", bytes_consumed);
         }
-        Err(ParseError::InvalidMessage) => {
+        Err((ParseError::InvalidMessage, bytes_consumed)) => {
             // Complete but invalid message (e.g., missing mandatory fields)
             println!("Invalid message found, consumed {} bytes", bytes_consumed);
         }
-        Err(ParseError::InvalidChecksum) => {
+        Err((ParseError::InvalidChecksum, bytes_consumed)) => {
             // Checksum verification failed
             println!("Invalid checksum, consumed {} bytes", bytes_consumed);
         }
@@ -102,28 +102,32 @@ fn main() {
     
     // Parse all messages in the stream
     while !data.is_empty() {
-        let (result, consumed) = parser.parse_bytes(data);
-        
-        if consumed == 0 {
-            // Partial message - would need more data in a real stream
-            break;
+        match parser.parse_bytes(data) {
+            Ok((msg, consumed)) => {
+                if consumed == 0 {
+                    // Partial message - would need more data in a real stream
+                    break;
+                }
+                
+                match msg {
+                    Some(message) => {
+                        println!("Parsed {:?} message", message.message_type());
+                    }
+                    None => {
+                        // Spurious data consumed
+                        println!("Consumed {} bytes of spurious data", consumed);
+                    }
+                }
+                
+                // Move to next message
+                data = &data[consumed..];
+            }
+            Err((error, consumed)) => {
+                println!("Parse error: {:?}, consumed {} bytes", error, consumed);
+                // Move past the invalid message
+                data = &data[consumed..];
+            }
         }
-        
-        match result {
-            Ok(Some(message)) => {
-                println!("Parsed {:?} message", message.message_type());
-            }
-            Ok(None) => {
-                // Spurious data consumed
-                println!("Consumed {} bytes of spurious data", consumed);
-            }
-            Err(e) => {
-                println!("Parse error: {:?}", e);
-            }
-        }
-        
-        // Move to next message
-        data = &data[consumed..];
     }
 }
 ```
@@ -147,8 +151,7 @@ fn main() {
     ];
     
     for sentence in &sentences {
-        let (result, _) = parser.parse_bytes(sentence);
-        if let Ok(Some(message)) = result {
+        if let Ok((Some(message), _)) = parser.parse_bytes(sentence) {
             if let Some(gga_data) = message.as_gga() {
                 match gga_data.talker_id {
                     TalkerId::GP => println!("GPS fix: {}", gga_data.time()),
@@ -185,12 +188,11 @@ The main parser structure. **The parser is now stateless** - it maintains no int
 #### Methods
 
 - `new()` - Create a new parser instance
-- `parse_bytes(data: &[u8]) -> (Result<Option<NmeaMessage>, ParseError>, usize)` - Parse bytes and return:
-  - `Ok(Some(message))` - Successfully parsed a complete, valid message
-  - `Ok(None)` - Partial message (need more data) or consumed spurious characters
-  - `Err(ParseError::InvalidMessage)` - Complete message but missing mandatory fields
-  - `Err(ParseError::InvalidChecksum)` - Checksum verification failed
-  - Returns the number of bytes consumed from the input
+- `parse_bytes(data: &[u8]) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)>` - Parse bytes and return:
+  - `Ok((Some(message), bytes_consumed))` - Successfully parsed a complete, valid message
+  - `Ok((None, bytes_consumed))` - Partial message (need more data) or consumed spurious characters
+  - `Err((ParseError::InvalidMessage, bytes_consumed))` - Complete message but missing mandatory fields
+  - `Err((ParseError::InvalidChecksum, bytes_consumed))` - Checksum verification failed
 
 ### `ParseError`
 

@@ -92,8 +92,8 @@ impl ParsedSentence {
     /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGLL,4916.45,N,12311.12,W,225444,A*1D\r\n";
     ///
-    /// let (result, _consumed) = parser.parse_bytes(sentence);
-    /// if let Ok(Some(msg)) = result {
+    /// let result = parser.parse_bytes(sentence);
+    /// if let Ok((Some(msg), _consumed)) = result {
     ///     if let Some(gll) = msg.as_gll() {
     ///         assert_eq!(gll.latitude, 4916.45);
     ///         assert_eq!(gll.status, 'A');

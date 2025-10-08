@@ -113,8 +113,8 @@ impl ParsedSentence {
     /// let parser = NmeaParser::new();
     /// let sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
     ///
-    /// let (result, _consumed) = parser.parse_bytes(sentence);
-    /// if let Ok(Some(msg)) = result {
+    /// let result = parser.parse_bytes(sentence);
+    /// if let Ok((Some(msg), _consumed)) = result {
     ///     if let Some(rmc) = msg.as_rmc() {
     ///         assert_eq!(rmc.time(), "123519");
     ///         assert_eq!(rmc.status, 'A');

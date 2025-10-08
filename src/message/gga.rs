@@ -120,8 +120,8 @@ impl ParsedSentence {
     /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n";
     ///
-    /// let (result, _consumed) = parser.parse_bytes(sentence);
-    /// if let Ok(Some(msg)) = result {
+    /// let result = parser.parse_bytes(sentence);
+    /// if let Ok((Some(msg), _consumed)) = result {
     ///     if let Some(gga) = msg.as_gga() {
     ///         assert_eq!(gga.time(), "123519");
     ///         assert_eq!(gga.latitude, 4807.038);

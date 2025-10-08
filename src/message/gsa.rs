@@ -97,8 +97,8 @@ impl ParsedSentence {
     /// let parser = NmeaParser::new();
     /// let sentence = b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n";
     ///
-    /// let (result, _consumed) = parser.parse_bytes(sentence);
-    /// if let Ok(Some(msg)) = result {
+    /// let result = parser.parse_bytes(sentence);
+    /// if let Ok((Some(msg), _consumed)) = result {
     ///     if let Some(gsa) = msg.as_gsa() {
     ///         assert_eq!(gsa.mode, 'A');
     ///         assert_eq!(gsa.fix_type, 3);
