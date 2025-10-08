@@ -52,8 +52,6 @@ pub struct GllData {
     time_data: [u8; 16],
     time_len: u8,
     pub status: char,
-    /// Local reception timestamp in milliseconds (optional, set by user)
-    pub local_timestamp_ms: Option<u64>,
 }
 
 impl GllData {
@@ -130,7 +128,6 @@ impl ParsedSentence {
             time_data,
             time_len,
             status,
-            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }

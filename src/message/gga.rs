@@ -68,8 +68,6 @@ pub struct GgaData {
     pub age_of_diff: Option<f32>,
     diff_station_id_data: [u8; 8],
     diff_station_id_len: u8,
-    /// Local reception timestamp in milliseconds (optional, set by user)
-    pub local_timestamp_ms: Option<u64>,
 }
 
 impl GgaData {
@@ -179,7 +177,6 @@ impl ParsedSentence {
             age_of_diff: self.parse_field(13),
             diff_station_id_data,
             diff_station_id_len,
-            local_timestamp_ms: self.local_timestamp_ms,
         })
     }
 }
