@@ -41,12 +41,32 @@ mod tests {
     #[test]
     fn test_parse_all_message_types() {
         let test_cases = [
-            (b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n".as_slice(), MessageType::GGA),
-            (b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n".as_slice(), MessageType::RMC),
-            (b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n".as_slice(), MessageType::GSA),
-            (b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n".as_slice(), MessageType::GSV),
-            (b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n".as_slice(), MessageType::GLL),
-            (b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n".as_slice(), MessageType::VTG),
+            (
+                b"$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47\r\n".as_slice(),
+                MessageType::GGA,
+            ),
+            (
+                b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n"
+                    .as_slice(),
+                MessageType::RMC,
+            ),
+            (
+                b"$GPGSA,A,3,04,05,,09,12,,,24,,,,,2.5,1.3,2.1*39\r\n".as_slice(),
+                MessageType::GSA,
+            ),
+            (
+                b"$GPGSV,2,1,08,01,40,083,46,02,17,308,41,12,07,344,39,14,22,228,45*75\r\n"
+                    .as_slice(),
+                MessageType::GSV,
+            ),
+            (
+                b"$GPGLL,4916.45,N,12311.12,W,225444,A,*1D\r\n".as_slice(),
+                MessageType::GLL,
+            ),
+            (
+                b"$GPVTG,054.7,T,034.4,M,005.5,N,010.2,K*48\r\n".as_slice(),
+                MessageType::VTG,
+            ),
         ];
 
         for (sentence, expected_type) in test_cases {
@@ -65,9 +85,13 @@ mod tests {
         let mut offset = 0;
         while offset < stream.len() {
             let result = parser.parse_bytes(&stream[offset..]);
-            if result.is_err() { break; }
+            if result.is_err() {
+                break;
+            }
             let (msg, consumed) = result.unwrap();
-            if consumed == 0 { break; }
+            if consumed == 0 {
+                break;
+            }
             offset += consumed;
             if msg.is_some() {
                 message_count += 1;
@@ -97,7 +121,7 @@ mod tests {
     #[test]
     fn test_invalid_and_partial_sentences() {
         let parser = NmeaParser::new();
-        
+
         // Test invalid data without $
         let invalid = b"INVALID DATA\r\n";
         let result = parser.parse_bytes(invalid);
@@ -527,6 +551,3 @@ mod tests {
         assert_eq!(msg2.message_type(), MessageType::RMC);
     }
 }
-
-
-

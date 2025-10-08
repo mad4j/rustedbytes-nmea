@@ -34,6 +34,7 @@ All message types (GGA, RMC, GSA, GSV, GLL, VTG) automatically track and report 
 | **GSV** | GPS Satellites in View | ✅ Fully Supported | Supports up to 4 satellites per message |
 | **GLL** | Geographic Position - Latitude/Longitude | ✅ Fully Supported | All standard fields implemented |
 | **VTG** | Track Made Good and Ground Speed | ✅ Fully Supported | All standard fields implemented |
+| **GNS** | GNSS Fix Data | ✅ Fully Supported | All standard fields implemented |
 
 ## Unsupported Message Types
 
@@ -57,7 +58,6 @@ The following NMEA 0183 message types are **not currently supported**:
 | **DTM** | Datum Reference | Medium |
 | **FSI** | Frequency Set Information | Low |
 | **GBS** | GPS Satellite Fault Detection | Medium |
-| **GNS** | GNSS Fix Data | Medium |
 | **GST** | GPS Pseudorange Noise Statistics | Medium |
 | **GTD** | Geographic Location in Time Differences | Low |
 | **GXA** | TRANSIT Position | Low |
@@ -201,6 +201,25 @@ Each `SatelliteInfo` contains:
 | 7 | Speed (km/h) | ✅ Optional | `Option<f32>` |
 | 8 | K Indicator | ✅ Optional | `Option<char>` |
 | 9 | Mode Indicator | ❌ Not Implemented | - |
+
+### GNS - GNSS Fix Data
+
+| Field | Description | Status | Type |
+|-------|-------------|--------|------|
+| - | Talker ID | ✅ Auto-extracted | `TalkerId` |
+| 1 | UTC Time | ✅ Mandatory | `&str` |
+| 2 | Latitude | ✅ Mandatory | `f64` |
+| 3 | N/S Indicator | ✅ Mandatory | `char` |
+| 4 | Longitude | ✅ Mandatory | `f64` |
+| 5 | E/W Indicator | ✅ Mandatory | `char` |
+| 6 | Mode Indicator | ✅ Mandatory | `&str` |
+| 7 | Number of Satellites | ✅ Mandatory | `u8` |
+| 8 | HDOP | ✅ Optional | `Option<f32>` |
+| 9 | Altitude | ✅ Optional | `Option<f32>` |
+| 10 | Geoid Separation | ✅ Optional | `Option<f32>` |
+| 11 | Age of Differential | ✅ Optional | `Option<f32>` |
+| 12 | Differential Station ID | ✅ Optional | `Option<&str>` |
+| 13 | Nav Status | ✅ Optional | `Option<char>` |
 
 ## Protocol Features
 

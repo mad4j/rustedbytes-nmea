@@ -79,7 +79,8 @@ impl GgaData {
     /// Get differential station ID as string slice (if present)
     pub fn diff_station_id(&self) -> Option<&str> {
         if self.diff_station_id_len > 0 {
-            core::str::from_utf8(&self.diff_station_id_data[..self.diff_station_id_len as usize]).ok()
+            core::str::from_utf8(&self.diff_station_id_data[..self.diff_station_id_len as usize])
+                .ok()
         } else {
             None
         }
@@ -346,7 +347,7 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
-        
+
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -362,7 +363,7 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
-        
+
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GP);
     }
@@ -378,7 +379,7 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
-        
+
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GL);
     }
@@ -394,7 +395,7 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
-        
+
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GA);
     }
@@ -410,9 +411,8 @@ mod tests {
         let msg = result.unwrap();
         let gga = msg.as_gga();
         assert!(gga.is_some());
-        
+
         let gga_data = gga.unwrap();
         assert_eq!(gga_data.talker_id, crate::types::TalkerId::GB);
     }
 }
-

@@ -9,6 +9,7 @@ use crate::types::*;
 // Message type implementations
 mod gga;
 mod gll;
+mod gns;
 mod gsa;
 mod gsv;
 mod rmc;
@@ -17,6 +18,7 @@ mod vtg;
 // Re-export message data structures
 pub use gga::GgaData;
 pub use gll::GllData;
+pub use gns::GnsData;
 pub use gsa::GsaData;
 pub use gsv::{GsvData, SatelliteInfo};
 pub use rmc::RmcData;
@@ -80,7 +82,7 @@ impl Field {
         let copy_len = bytes.len().min(16);
         let mut data = [0; 16];
         data[..copy_len].copy_from_slice(&bytes[..copy_len]);
-        
+
         Field {
             data,
             len: copy_len as u8,

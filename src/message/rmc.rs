@@ -335,7 +335,7 @@ mod tests {
         let msg = result.unwrap();
         let rmc = msg.as_rmc();
         assert!(rmc.is_some());
-        
+
         let rmc_data = rmc.unwrap();
         assert_eq!(rmc_data.talker_id, crate::types::TalkerId::GN);
     }
@@ -343,25 +343,28 @@ mod tests {
     #[test]
     fn test_rmc_multiple_constellations() {
         let parser = NmeaParser::new();
-        
+
         // Test GPS
-        let gp_sentence = b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let gp_sentence =
+            b"$GPRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
         let gp_result = parser.parse_sentence_complete(gp_sentence);
         assert!(gp_result.is_some());
         let gp_msg = gp_result.unwrap();
         let gp_rmc = gp_msg.as_rmc().unwrap();
         assert_eq!(gp_rmc.talker_id, crate::types::TalkerId::GP);
-        
+
         // Test GLONASS
-        let gl_sentence = b"$GLRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let gl_sentence =
+            b"$GLRMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
         let gl_result = parser.parse_sentence_complete(gl_sentence);
         assert!(gl_result.is_some());
         let gl_msg = gl_result.unwrap();
         let gl_rmc = gl_msg.as_rmc().unwrap();
         assert_eq!(gl_rmc.talker_id, crate::types::TalkerId::GL);
-        
+
         // Test Galileo
-        let ga_sentence = b"$GARMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
+        let ga_sentence =
+            b"$GARMC,123519,A,4807.038,N,01131.000,E,022.4,084.4,230394,003.1,W*6A\r\n";
         let ga_result = parser.parse_sentence_complete(ga_sentence);
         assert!(ga_result.is_some());
         let ga_msg = ga_result.unwrap();
@@ -369,4 +372,3 @@ mod tests {
         assert_eq!(ga_rmc.talker_id, crate::types::TalkerId::GA);
     }
 }
-
