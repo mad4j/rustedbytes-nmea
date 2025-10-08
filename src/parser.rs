@@ -17,10 +17,10 @@ impl NmeaParser {
     /// Returns:
     /// - Ok((Some(message), bytes_consumed)) - Successfully parsed a complete message
     /// - Ok((None, bytes_consumed)) - Partial message, need more data (bytes_consumed will be 0 if no $ found)
-    /// - Err(ParseError) - Found complete message but it's invalid
+    /// - Err((ParseError, bytes_consumed)) - Found complete message but it's invalid
     /// 
     /// The parser handles spurious characters before the '$' start marker by consuming them.
-    pub fn parse_bytes(&self, data: &[u8]) -> Result<(Option<NmeaMessage>, usize), ParseError> {
+    pub fn parse_bytes(&self, data: &[u8]) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)> {
         // Find the start of a message
         let start_pos = data.iter().position(|&b| b == b'$');
         
@@ -57,7 +57,12 @@ impl NmeaParser {
             }
             None => {
                 // Complete message but invalid (missing mandatory fields)
-                Err(ParseError::InvalidMessage)
+                // Consume the invalid message
+                let mut consumed = end_pos + 1;
+                while consumed < data.len() && (data[consumed] == b'\r' || data[consumed] == b'\n') {
+                    consumed += 1;
+                }
+                Err((ParseError::InvalidMessage, consumed))
             }
         }
     }
@@ -265,7 +270,8 @@ mod tests {
         
         let result = parser.parse_bytes(sentence);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+        let (err, _consumed) = result.unwrap_err();
+        assert_eq!(err, ParseError::InvalidMessage);
     }
 
     #[test]
@@ -328,13 +334,15 @@ mod tests {
         let txt_sentence = b"$GPTXT,01,01,02,Software Version 7.03.00 (12345)*6E\r\n";
         let result = parser.parse_bytes(txt_sentence);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+        let (err, _consumed) = result.unwrap_err();
+        assert_eq!(err, ParseError::InvalidMessage);
         
         // GPXTE - cross-track error (not supported)
         let xte_sentence = b"$GPXTE,A,A,0.67,L,N*6F\r\n";
         let result2 = parser.parse_bytes(xte_sentence);
         assert!(result2.is_err());
-        assert_eq!(result2.unwrap_err(), ParseError::InvalidMessage);
+        let (err2, _consumed2) = result2.unwrap_err();
+        assert_eq!(err2, ParseError::InvalidMessage);
     }
 
     // Tests based on references/nmea_invalid.txt

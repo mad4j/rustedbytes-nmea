@@ -14,8 +14,8 @@ pub use message::{Field, GgaData, GllData, GsaData, GsvData, RmcData, SatelliteI
 pub use parser::NmeaParser;
 pub use types::*;
 
-/// Parse result type: returns optional message and bytes consumed, or error
-pub type ParseResult = Result<(Option<NmeaMessage>, usize), ParseError>;
+/// Parse result type: returns optional message and bytes consumed, or error with bytes consumed
+pub type ParseResult = Result<(Option<NmeaMessage>, usize), (ParseError, usize)>;
 
 #[cfg(test)]
 mod tests {
@@ -285,7 +285,8 @@ mod tests {
         let result = parser.parse_bytes(sentence);
         // Should return error because mandatory fields (latitude, longitude) are empty
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+        let (err, _consumed) = result.unwrap_err();
+        assert_eq!(err, ParseError::InvalidMessage);
     }
 
     #[test]
@@ -407,7 +408,8 @@ mod tests {
         for sentence in test_cases {
             let result = parser.parse_bytes(sentence);
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+            let (err, _consumed) = result.unwrap_err();
+            assert_eq!(err, ParseError::InvalidMessage);
         }
     }
 
@@ -498,7 +500,8 @@ mod tests {
 
         let result = parser.parse_bytes(invalid);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), ParseError::InvalidMessage);
+        let (err, _consumed) = result.unwrap_err();
+        assert_eq!(err, ParseError::InvalidMessage);
     }
 }
 

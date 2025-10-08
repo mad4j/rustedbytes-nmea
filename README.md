@@ -75,13 +75,13 @@ fn main() {
             // Partial message or spurious data - need more bytes
             println!("Partial message, consumed {} bytes", bytes_consumed);
         }
-        Err(ParseError::InvalidMessage) => {
+        Err((ParseError::InvalidMessage, bytes_consumed)) => {
             // Complete but invalid message (e.g., missing mandatory fields)
-            println!("Invalid message found");
+            println!("Invalid message found, consumed {} bytes", bytes_consumed);
         }
-        Err(ParseError::InvalidChecksum) => {
+        Err((ParseError::InvalidChecksum, bytes_consumed)) => {
             // Checksum verification failed
-            println!("Invalid checksum");
+            println!("Invalid checksum, consumed {} bytes", bytes_consumed);
         }
     }
 }
@@ -122,9 +122,10 @@ fn main() {
                 // Move to next message
                 data = &data[consumed..];
             }
-            Err(e) => {
-                println!("Parse error: {:?}", e);
-                break;
+            Err((error, consumed)) => {
+                println!("Parse error: {:?}, consumed {} bytes", error, consumed);
+                // Move past the invalid message
+                data = &data[consumed..];
             }
         }
     }
@@ -187,11 +188,11 @@ The main parser structure. **The parser is now stateless** - it maintains no int
 #### Methods
 
 - `new()` - Create a new parser instance
-- `parse_bytes(data: &[u8]) -> Result<(Option<NmeaMessage>, usize), ParseError>` - Parse bytes and return:
+- `parse_bytes(data: &[u8]) -> Result<(Option<NmeaMessage>, usize), (ParseError, usize)>` - Parse bytes and return:
   - `Ok((Some(message), bytes_consumed))` - Successfully parsed a complete, valid message
   - `Ok((None, bytes_consumed))` - Partial message (need more data) or consumed spurious characters
-  - `Err(ParseError::InvalidMessage)` - Complete message but missing mandatory fields
-  - `Err(ParseError::InvalidChecksum)` - Checksum verification failed
+  - `Err((ParseError::InvalidMessage, bytes_consumed))` - Complete message but missing mandatory fields
+  - `Err((ParseError::InvalidChecksum, bytes_consumed))` - Checksum verification failed
 
 ### `ParseError`
 
