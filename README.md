@@ -367,6 +367,16 @@ Run the test suite:
 cargo test
 ```
 
+## Contributing
+
+Contributions are welcome! Please ensure:
+
+- All tests pass (`cargo test`)
+- Code is properly formatted (`cargo fmt`)
+- No clippy warnings (`cargo clippy`)
+
+For maintainers: See [RELEASE.md](RELEASE.md) for instructions on creating a new release.
+
 ## License
 
 MIT License - see LICENSE file for details.
