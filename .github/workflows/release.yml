@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.1.1, 0.2.0, 1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  validate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+    steps:
+      - name: Validate version format
+        id: validate
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Version must be in format X.Y.Z (e.g., 0.1.1, 1.0.0)"
+            exit 1
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Valid version: $VERSION"
+
+  test:
+    needs: validate-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      
+      - name: Run tests
+        run: cargo test --verbose
+      
+      - name: Check formatting
+        run: cargo fmt --check
+      
+      - name: Run clippy
+        run: cargo clippy -- -D warnings
+
+  prepare-release:
+    needs: [validate-version, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Update version in Cargo.toml
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
+          echo "Updated Cargo.toml to version $VERSION"
+      
+      - name: Update version in README.md
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          sed -i "s/rustedbytes-nmea = \"[0-9.]*\"/rustedbytes-nmea = \"$VERSION\"/" README.md
+          echo "Updated README.md to version $VERSION"
+      
+      - name: Update CHANGELOG.md
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+          
+          # Create CHANGELOG.md if it doesn't exist
+          if [ ! -f CHANGELOG.md ]; then
+            cat > CHANGELOG.md <<EOF
+          # Changelog
+          
+          All notable changes to this project will be documented in this file.
+          
+          The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+          and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+          
+          ## [Unreleased]
+          
+          ## [$VERSION] - $DATE
+          
+          ### Added
+          - Release version $VERSION
+          
+          EOF
+          else
+            # Update existing CHANGELOG - replace [Unreleased] section with new version
+            if grep -q "## \[Unreleased\]" CHANGELOG.md; then
+              # Add new version section after Unreleased
+              sed -i "/## \[Unreleased\]/a\\\\n## [$VERSION] - $DATE\\n\\n### Added\\n- Release version $VERSION" CHANGELOG.md
+            else
+              # If no Unreleased section, add at the top after the header
+              sed -i "/^# /a\\\\n## [$VERSION] - $DATE\\n\\n### Added\\n- Release version $VERSION" CHANGELOG.md
+            fi
+          fi
+          
+          echo "Updated CHANGELOG.md with version $VERSION"
+      
+      - name: Verify Cargo.toml syntax
+        run: cargo check --verbose
+      
+      - name: Commit version updates
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          git add Cargo.toml README.md CHANGELOG.md Cargo.lock
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Release version $VERSION"
+            git push origin main
+          fi
+      
+      - name: Create git tag
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          git tag -a "v$VERSION" -m "Release version $VERSION"
+          git push origin "v$VERSION"
+
+  create-github-release:
+    needs: [validate-version, prepare-release]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.validate-version.outputs.version }}
+          fetch-depth: 0
+      
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ needs.validate-version.outputs.version }}"
+          
+          if [ -f CHANGELOG.md ]; then
+            # Extract the section for this version
+            CHANGELOG_CONTENT=$(sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$ d' | tail -n +2)
+            
+            if [ -z "$CHANGELOG_CONTENT" ]; then
+              CHANGELOG_CONTENT="Release version $VERSION"
+            fi
+          else
+            CHANGELOG_CONTENT="Release version $VERSION"
+          fi
+          
+          # Save to file for use in release
+          echo "$CHANGELOG_CONTENT" > /tmp/release_notes.md
+          echo "Release notes prepared"
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.validate-version.outputs.version }}
+          name: Release v${{ needs.validate-version.outputs.version }}
+          body_path: /tmp/release_notes.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-crates-io:
+    needs: [validate-version, create-github-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.validate-version.outputs.version }}
+      
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+      
+      - name: Verify crate can be packaged
+        run: cargo package --verbose
+      
+      - name: Publish to crates.io
+        run: cargo publish --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
