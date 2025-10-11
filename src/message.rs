@@ -13,6 +13,7 @@ mod gns;
 mod gsa;
 mod gsv;
 mod rmc;
+mod st;
 mod vtg;
 
 // Re-export message data structures
@@ -22,10 +23,14 @@ pub use gns::GnsData;
 pub use gsa::GsaData;
 pub use gsv::{GsvData, SatelliteInfo};
 pub use rmc::RmcData;
+pub use st::StMessageData;
 pub use vtg::VtgData;
 
 /// Maximum number of fields in an NMEA sentence
+#[cfg(not(feature = "st-teseo-liv3"))]
 pub(crate) const MAX_FIELDS: usize = 20;
+#[cfg(feature = "st-teseo-liv3")]
+pub(crate) const MAX_FIELDS: usize = 40;
 
 /// Parsed NMEA sentence data (internal representation)
 ///

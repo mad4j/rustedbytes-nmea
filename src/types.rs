@@ -1,6 +1,8 @@
 //! NMEA message types and data structures
 
-use crate::message::{GgaData, GllData, GnsData, GsaData, GsvData, RmcData, VtgData};
+use crate::message::{
+    GgaData, GllData, GnsData, GsaData, GsvData, RmcData, StMessageData, VtgData,
+};
 
 /// Parse error types
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,6 +23,8 @@ pub enum TalkerId {
     GN, // Multi-GNSS (combined)
     BD, // BeiDou (alternative)
     QZ, // QZSS (Quasi-Zenith Satellite System)
+    #[cfg(feature = "st-teseo-liv3")]
+    PSTM, // ST propriety messages
     Unknown,
 }
 
@@ -34,6 +38,8 @@ pub enum MessageType {
     GLL, // Geographic Position - Latitude/Longitude
     VTG, // Track Made Good and Ground Speed
     GNS, // GNSS Fix Data
+    #[cfg(feature = "st-teseo-liv3")]
+    PSTM, // ST propriety messages
     Unknown,
 }
 
@@ -47,6 +53,7 @@ pub enum NmeaMessage {
     GLL(GllData),
     VTG(VtgData),
     GNS(GnsData),
+    StPropriety(StMessageData),
 }
 
 impl NmeaMessage {
@@ -60,6 +67,8 @@ impl NmeaMessage {
             NmeaMessage::GLL(_) => MessageType::GLL,
             NmeaMessage::VTG(_) => MessageType::VTG,
             NmeaMessage::GNS(_) => MessageType::GNS,
+            #[cfg(feature = "st-teseo-liv3")]
+            NmeaMessage::StPropriety(_) => MessageType::PSTM,
         }
     }
 
@@ -73,6 +82,8 @@ impl NmeaMessage {
             NmeaMessage::GLL(d) => d.talker_id,
             NmeaMessage::VTG(d) => d.talker_id,
             NmeaMessage::GNS(d) => d.talker_id,
+            #[cfg(feature = "st-teseo-liv3")]
+            NmeaMessage::StPropriety(_) => TalkerId::PSTM,
         }
     }
 
@@ -136,6 +147,15 @@ impl NmeaMessage {
             Some(data)
         } else {
             None
+        }
+    }
+
+    #[cfg(feature = "st-teseo-liv3")]
+    /// Extract ST propriety data if this is an ST message
+    pub fn as_st(&self) -> Option<&StMessageData> {
+        match self {
+            NmeaMessage::StPropriety(data) => Some(&data),
+            _ => None,
         }
     }
 }
