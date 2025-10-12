@@ -1,7 +1,7 @@
 use crate::message::st::diff::DifferentialCorrectionData;
 use crate::message::st::tg::TimeAndSatelliteInformation;
 use crate::message::ParsedSentence;
-use crate::message::StMessageData::{ConfigAntiJamResult, ConfigGeofenceEnableResult, ConfigLpaResult, ConfigOdometerResult};
+use crate::message::StMessageData::{ConfigAntiJamResult, ConfigGeofenceCircleConfigureResult, ConfigGeofenceEnableResult, ConfigLpaResult, ConfigOdometerResult};
 use crate::MessageType;
 
 mod diff;
@@ -14,6 +14,7 @@ pub enum StMessageData {
     TimeAndSatelliteInformation(TimeAndSatelliteInformation),
     ConfigAntiJamResult(bool),
     ConfigGeofenceEnableResult(bool),
+    ConfigGeofenceCircleConfigureResult(bool),
     ConfigLpaResult(bool),
     ConfigOdometerResult(bool)
 }
@@ -33,6 +34,8 @@ impl ParsedSentence {
             x if x.starts_with(b"PSTMCFGAJMERROR") => Some(ConfigAntiJamResult(false)),
             x if x.starts_with(b"PSTMCFGGEOFENCEOK") => Some(ConfigGeofenceEnableResult(true)),
             x if x.starts_with(b"PSTMCFGGEOFENCEERROR") => Some(ConfigGeofenceEnableResult(false)),
+            x if x.starts_with(b"PSTMCFGGEOCIROK") => Some(ConfigGeofenceCircleConfigureResult(true)),
+            x if x.starts_with(b"PSTMCFGGEOCIRERROR") => Some(ConfigGeofenceCircleConfigureResult(false)),
             x if x.starts_with(b"PSTMCFGLPAOK*") => Some(ConfigLpaResult(true)),
             x if x.starts_with(b"PSTMCFGLPAERROR*") => Some(ConfigLpaResult(false)),
             x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => Some(ConfigOdometerResult(true)),
