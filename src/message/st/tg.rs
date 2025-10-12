@@ -68,7 +68,7 @@ impl TimeAndSatelliteInformation {
         let cpu_time = sentence.parse_field::<u32>(4)?;
         let time_valid = sentence.parse_field::<u8>(5)?;
         let nco = sentence.parse_field::<u32>(6)?;
-        let kf_config_status = sentence.parse_field::<u8>(7)?;
+        let kf_config_status = sentence.parse_hex_field::<u8>(7)?;
         let constellation_mask = sentence.parse_field::<u8>(8)?;
         let time_best_sat_type = sentence.parse_field::<u8>(9)?;
         let time_master_sat_type = sentence.parse_field::<u8>(10)?;
