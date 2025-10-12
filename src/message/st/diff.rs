@@ -5,7 +5,7 @@
 //! NCS         Decimal, 2 digits   Number of corrected satellites
 //! SatxID      Decimal, 2 digits   Satellite x ID (PRN)
 //! CorrxAvl    Decimal             Correction available for Satellite
-//!
+//
 //! $PSTMDIFF,‹ListSize>,<NCS>,[<Sat1ID>,<Corr1Avl>,] ... [<SatNID>,<CorrNAv1>,]*<checksum><cr><1f>
 
 use crate::message::ParsedSentence;
