@@ -8,6 +8,7 @@ pub use st::{
     anti_jam::{NotchFilterMode, ConfigureAntiJamming},
     geofence::{ConfigureEnableGeofenceCircles, GeofenceToleranceLevel},
     geofence_circle::ConfigureGeofenceCircle,
+    get_sw_version::GetSoftwareVersion,
     lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
     odometer::ConfigureOdometer,
 };

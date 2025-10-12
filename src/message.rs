@@ -30,8 +30,15 @@ pub use vtg::VtgData;
 /// Maximum number of fields in an NMEA sentence
 #[cfg(not(feature = "st-teseo-liv3"))]
 pub(crate) const MAX_FIELDS: usize = 20;
+
+#[cfg(not(feature = "st-teseo-liv3"))]
+pub(crate) const FIELD_SIZE_BYTES: usize = 16;
+
 #[cfg(feature = "st-teseo-liv3")]
 pub(crate) const MAX_FIELDS: usize = 40;
+
+#[cfg(feature = "st-teseo-liv3")]
+pub(crate) const FIELD_SIZE_BYTES: usize = 32;
 
 /// Parsed NMEA sentence data (internal representation)
 ///
@@ -99,17 +106,17 @@ impl ParsedSentence {
 /// string storage without heap allocation.
 #[derive(Debug, Clone, Copy)]
 pub struct Field {
-    data: [u8; 16], // Reduced from 32 to 16 bytes - sufficient for most NMEA fields
+    data: [u8; FIELD_SIZE_BYTES], // Sufficient for most NMEA fields
     len: u8,        // Changed from usize to u8 for memory efficiency
 }
 
 impl Field {
     /// Create a field from a byte slice
     ///
-    /// Copies up to 16 bytes from the input slice.
+    /// Copies up to FIELD_SIZE_BYTES bytes from the input slice.
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
-        let copy_len = bytes.len().min(16);
-        let mut data = [0; 16];
+        let copy_len = bytes.len().min(FIELD_SIZE_BYTES);
+        let mut data = [0; FIELD_SIZE_BYTES];
         data[..copy_len].copy_from_slice(&bytes[..copy_len]);
 
         Field {
