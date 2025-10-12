@@ -40,6 +40,28 @@
 use crate::message::ParsedSentence;
 
 #[derive(Debug, Clone)]
+pub enum KalmanVelocityEstimatorModel {
+    SingleModel,
+    MultipleModel,
+}
+
+#[derive(Debug, Clone)]
+pub enum KalmanVelocityEstimatorFilter {
+    Slow,
+    Fast,
+}
+
+#[derive(Debug, Clone)]
+pub struct KalmanFilterConfiguration {
+    pub walking_mode: bool,
+    pub stop_detection: bool,
+    pub frequency_ramp_on: bool,
+    pub velocity_estimator_model: KalmanVelocityEstimatorModel,
+    pub velocity_estimator_filter: KalmanVelocityEstimatorFilter,
+    pub fde_status: bool
+}
+
+#[derive(Debug, Clone)]
 pub struct TimeAndSatelliteInformation {
     pub week: u16,
     pub tow: u32,
@@ -47,7 +69,7 @@ pub struct TimeAndSatelliteInformation {
     pub cpu_time: u32,
     pub time_valid: u8,
     pub nco: u32,
-    pub kf_config_status: u8,
+    pub kf_config_status: KalmanFilterConfiguration,
     pub constellation_mask: u8,
     pub time_best_sat_type: u8,
     pub time_master_sat_type: u8,
@@ -79,6 +101,15 @@ impl TimeAndSatelliteInformation {
         let time_aux_week_n = sentence.parse_field::<u16>(15)?;
         let time_aux_tow = sentence.parse_field::<f32>(16)?;
         let time_aux_validity = sentence.parse_field::<u8>(17)?;
+
+        let kf_config_status = KalmanFilterConfiguration {
+            walking_mode: (kf_config_status & 0b0000_0001) != 0,
+            stop_detection: (kf_config_status & 0b0000_0010) != 0,
+            frequency_ramp_on: (kf_config_status & 0b0000_0100) != 0,
+            velocity_estimator_model: if (kf_config_status & 0b0000_1000) != 0 { KalmanVelocityEstimatorModel::MultipleModel } else { KalmanVelocityEstimatorModel::SingleModel },
+            velocity_estimator_filter: if (kf_config_status & 0b0001_0000) != 0 { KalmanVelocityEstimatorFilter::Fast } else { KalmanVelocityEstimatorFilter::Slow },
+            fde_status: (kf_config_status & 0b0010_0000) != 0,
+        };
 
         Some(TimeAndSatelliteInformation {
             week,
