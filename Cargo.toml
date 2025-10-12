@@ -14,5 +14,6 @@ categories = ["embedded", "no-std", "parsing"]
 heapless = {version = "0.9", optional = true}
 
 [features]
-default = ["st-teseo-liv3"]
+default = ["st-teseo-liv3", "commands"]
 st-teseo-liv3 = ["dep:heapless"]
+commands = ["dep:heapless"]

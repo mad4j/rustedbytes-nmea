@@ -1,7 +1,7 @@
 //! $PSTMTG
 //! Time and Satellites Information
 //!
-//! | **Parameter** | **Format** | **Description** |
+//! | **Parameter**          | **Format**              | **Description** |
 //! | :--------------------- | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 //! | `Week`                 | Decimal, 4 digits       | Week Number                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 //! | `TOW`                  | Decimal, 10 digits      | Time of Week                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
@@ -10,7 +10,7 @@
 //! | `Timevalid`            | Decimal, 2 digits       | 0 = no time <br>1 = time read from flash <br>2 = time set by user <br>3 = time set user RTC <br>4 = RTC time <br>5 = RTC time, accurate <br>6 = time approximate <br>7 = "not used" <br>8 = time accurate <br>9 = position time <br>10 = Ephemeris time  |
 //! | `NCO`                  | Decimal, 9 digits       | NCO value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 //! | `kf_config_status`     | Hexadecimal, 2 digits   | Kalman Filter Configuration. <br>For each bit: <br>• 0 means feature disabled <br>• 1 means feature enabled <br>See Table 141.                                                                                                                                                                                                                                                                                                                                                      |
-//! | `constellation_mask`   | Decimal, 3 digits max | It is a bit mask where each bit enables/disables a specific constellation independently of the others: <br>bit 0: GPS constellation enabling/disabling <br>bit 1: GLONASS constellation enabling/disabling <br>bit 2: QZSS constellation enabling/disabling <br>bit 3: GALILELO constellation enabling/disabling <br>bit 7: BAIDEU constellation enabling/disabling                                                                                                |
+//! | `constellation_mask`   | Decimal, 3 digits max   | It is a bit mask where each bit enables/disables a specific constellation independently of the others: <br>bit 0: GPS constellation enabling/disabling <br>bit 1: GLONASS constellation enabling/disabling <br>bit 2: QZSS constellation enabling/disabling <br>bit 3: GALILELO constellation enabling/disabling <br>bit 7: BAIDEU constellation enabling/disabling                                                                                                |
 //! | `time_best_sat_type`   | Decimal                 | Selected best time satellite type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 //! | `time_master_sat_type` | Decimal                 | Master time satellite type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 //! | `time_aux_sat_type`    | Decimal                 | Auxiliary time satellite type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -26,17 +26,17 @@
 //! ## Table 141: $PSTMTG Kalman Filter Configuration
 //!
 //! | **Bit** | **Configuration** |
-//! | :------ | :---------------------------------------------------------------------------------------------- |
+//! | :------ | :---------------------------------------------------------------------------------- |
 //! | 0       | Walking mode ON                                                                     |
 //! | 1       | Stop Detection ON                                                                   |
 //! | 2       | Frequency Ramp On (only Xtal mode)                                                  |
-//! | 3       | Velocity estimator model: <br>• 1 means MULTIPLE MODEL <br>• 0 means SINGLE MODEL  |
-//! | 4       | Velocity estimator filter: <br>• 1 means SLOW <br>• 0 means FAST            |
+//! | 3       | Velocity estimator model: <br>• 1 means MULTIPLE MODEL <br>• 0 means SINGLE MODEL   |
+//! | 4       | Velocity estimator filter: <br>• 1 means SLOW <br>• 0 means FAST                    |
 //! | 5       | FDE Status ON                                                                       |
 
 //! $PSTMTG,<Week>,<TOW>,<TotSat>,<CPUTime><Timevalid><NCO><kf_config_status><constellation_mask>
 //! <time_best_sat_type><time_master_sat_type><time_aux_sat_type><time_master_week_n><time_master
-//! _tow><time_master_validity><time_aux_week_n><time_aux_tow><time_aux_validity>*
+//! _tow><time_master_validity><time_aux_week_n><time_aux_tow><time_aux_validity>*<checksum><cr><lf>
 use crate::message::ParsedSentence;
 
 #[derive(Debug, Clone)]

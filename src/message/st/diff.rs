@@ -6,10 +6,12 @@
 //! SatxID      Decimal, 2 digits   Satellite x ID (PRN)
 //! CorrxAvl    Decimal             Correction available for Satellite
 //
-//! $PSTMDIFF,‹ListSize>,<NCS>,[<Sat1ID>,<Corr1Avl>,] ... [<SatNID>,<CorrNAv1>,]*<checksum><cr><1f>
+//! $PSTMDIFF,‹ListSize>,<NCS>,[<Sat1ID>,<Corr1Avl>,] ... [<SatNID>,<CorrNAv1>,]*<checksum><cr><lf>
 
 use crate::message::ParsedSentence;
 use heapless::Vec;
+
+pub const SATELLITE_CORRECTION_AMOUNT: usize = 12;
 
 #[derive(Debug, Clone)]
 pub struct SatelliteCorrection {
@@ -21,7 +23,7 @@ pub struct SatelliteCorrection {
 pub struct DifferentialCorrectionData {
     pub list_size: u8,
     pub number_of_corrected_satellites: u8,
-    pub satellites: Vec<SatelliteCorrection, 12>,
+    pub satellites: Vec<SatelliteCorrection, SATELLITE_CORRECTION_AMOUNT>,
 }
 
 impl DifferentialCorrectionData {
@@ -40,7 +42,7 @@ impl DifferentialCorrectionData {
                 })
                 .is_err()
             {
-                // We've reached the arbitrary 12 satellite limit
+                // We've reached the arbitrary SATELLITE_CORRECTION_AMOUNT satellite limit
                 break;
             }
         }
