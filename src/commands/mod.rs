@@ -4,7 +4,10 @@ use heapless::{format, String};
 mod st;
 
 #[cfg(feature = "st-teseo-liv3")]
-pub use st::lpa::{LowPowerAlgorithm, LowPowerAlgorithmFeature};
+pub use st::{
+    lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
+    odometer::ConfigureOdometer
+};
 
 /// Generate NMEA checksum for a sentence
 pub(crate) fn nmea_checksum(sentence: &str) -> u8 {

@@ -55,7 +55,7 @@ pub enum LowPowerAlgorithmFeature {
 }
 
 #[derive(Debug, Clone)]
-pub struct LowPowerAlgorithm {
+pub struct ConfigureLowPowerAlgorithm {
     pub en_pa: bool,
     pub feat: LowPowerAlgorithmFeature,
     pub fix_period: u16,
@@ -71,7 +71,7 @@ pub struct LowPowerAlgorithm {
     pub const_type: u8,
 }
 
-impl Command for LowPowerAlgorithm {
+impl Command for ConfigureLowPowerAlgorithm {
     // 31 for command, commas, checksum and crlf
     const MAX_LEN: usize = 31 + 21;
     const CMD: &'static str = "PSTMCFGLPA";
@@ -109,7 +109,7 @@ mod test {
     use super::*;
     #[test]
     fn test_lpa_command() {
-        let lpa = LowPowerAlgorithm {
+        let lpa = ConfigureLowPowerAlgorithm {
             en_pa: true,
             feat: LowPowerAlgorithmFeature::ActivePeriodicMode,
             fix_period: 10,
@@ -133,7 +133,7 @@ mod test {
 
     #[test]
     fn test_lpa_command_standby_periodic_mode() {
-        let lpa = LowPowerAlgorithm {
+        let lpa = ConfigureLowPowerAlgorithm {
             en_pa: true,
             feat: LowPowerAlgorithmFeature::StandbyPeriodicMode,
             fix_period: 0, // Valid for Standby Periodic mode
