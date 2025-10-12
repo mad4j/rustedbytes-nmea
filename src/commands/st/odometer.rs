@@ -33,7 +33,8 @@ impl Command for ConfigureOdometer {
         let en = if self.en { 1 } else { 0 };
         let enmsg = if self.enmsg { 1 } else { 0 };
         let mut s = format!(
-            "$PSTMCFGODO,{},{},{}",
+            "${},{},{},{}",
+            Self::CMD,
             en,
             enmsg,
             self.alarm

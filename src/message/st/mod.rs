@@ -1,7 +1,7 @@
 use crate::message::st::diff::DifferentialCorrectionData;
 use crate::message::st::tg::TimeAndSatelliteInformation;
 use crate::message::ParsedSentence;
-use crate::message::StMessageData::{ConfigLpa, ConfigOdometer};
+use crate::message::StMessageData::{ConfigAntiJam, ConfigLpa, ConfigOdometer};
 use crate::MessageType;
 
 mod diff;
@@ -12,6 +12,7 @@ mod tg;
 pub enum StMessageData {
     DifferentialCorrectionData(DifferentialCorrectionData),
     TimeAndSatelliteInformation(TimeAndSatelliteInformation),
+    ConfigAntiJam(bool),
     ConfigLpa(bool),
     ConfigOdometer(bool)
 }
@@ -27,6 +28,8 @@ impl ParsedSentence {
                 .map(|d| StMessageData::DifferentialCorrectionData(d)),
             x if x.starts_with(b"PSTMTG") => TimeAndSatelliteInformation::parse(self)
                 .map(|d| StMessageData::TimeAndSatelliteInformation(d)),
+            x if x.starts_with(b"PSTMCFGLPAOK") => Some(ConfigAntiJam(true)),
+            x if x.starts_with(b"PSTMCFGLPAERROR") => Some(ConfigAntiJam(false)),
             x if x.starts_with(b"PSTMCFGLPAOK*") => Some(ConfigLpa(true)),
             x if x.starts_with(b"PSTMCFGLPAERROR*") => Some(ConfigLpa(false)),
             x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => Some(ConfigOdometer(true)),

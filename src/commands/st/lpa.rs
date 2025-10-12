@@ -84,7 +84,8 @@ impl Command for ConfigureLowPowerAlgorithm {
             LowPowerAlgorithmFeature::StandbyPeriodicMode => 3,
         };
         let mut s = format!(
-            "$PSTMCFGLPA,{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            "${},{},{},{},{},{},{},{},{},{},{},{},{},{}",
+            Self::CMD,
             en_pa,
             feat,
             self.fix_period,

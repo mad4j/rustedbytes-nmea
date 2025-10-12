@@ -5,8 +5,9 @@ mod st;
 
 #[cfg(feature = "st-teseo-liv3")]
 pub use st::{
+    anti_jam::{NotchFilterMode, ConfigureAntiJamming},
     lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
-    odometer::ConfigureOdometer
+    odometer::ConfigureOdometer,
 };
 
 /// Generate NMEA checksum for a sentence
