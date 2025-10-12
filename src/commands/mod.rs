@@ -6,6 +6,7 @@ mod st;
 #[cfg(feature = "st-teseo-liv3")]
 pub use st::{
     anti_jam::{NotchFilterMode, ConfigureAntiJamming},
+    geofence::{ConfigureEnableGeofenceCircles, GeofenceToleranceLevel},
     lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
     odometer::ConfigureOdometer,
 };

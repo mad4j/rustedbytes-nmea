@@ -5,6 +5,8 @@
 //! This library provides a `no_std` compatible NMEA 0183 parser for parsing
 //! GPS/GNSS data from receivers.
 
+extern crate alloc;
+
 mod message;
 mod parser;
 mod types;
