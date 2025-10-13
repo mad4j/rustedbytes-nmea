@@ -34,8 +34,9 @@ pub struct StandbyEnableStatus {
 impl StandbyEnableStatus {
     pub(crate) fn parse(sentence: &crate::message::ParsedSentence) -> Option<Self> {
         let status = sentence.parse_field::<u8>(1)?;
+        let status = PeriodicStandbyMode::try_from(status).ok()?;
         Some(Self {
-            status: PeriodicStandbyMode::try_from(status).ok()?,
+            status,
         })
     }
 }
@@ -44,6 +45,19 @@ impl StandbyEnableStatus {
 mod test {
     use super::*;
     use crate::message::StMessageData;
+
+    #[test]
+    fn periodic_standby_mode_from_u8() {
+        assert!(matches!(
+            PeriodicStandbyMode::try_from(0).unwrap(),
+            PeriodicStandbyMode::Active
+        ));
+        assert!(matches!(
+            PeriodicStandbyMode::try_from(1).unwrap(),
+            PeriodicStandbyMode::Periodic
+        ));
+        assert!(PeriodicStandbyMode::try_from(2).is_err());
+    }
 
     #[test]
     fn test_standby_enable_status_parse() {

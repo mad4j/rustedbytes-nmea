@@ -179,7 +179,7 @@ mod tests {
 
         [
             (b"1" as &[u8], Some(0x1)),
-            (b"A1B2", Some(0xA1B2)),
+            (b"a1b2", Some(0xA1B2)),
             (b"ABC", Some(0xABC)), // Uneven amount of characters
             (b"GHIJ", None),       // Invalid hex
             (b"", Some(0)),        // Empty field

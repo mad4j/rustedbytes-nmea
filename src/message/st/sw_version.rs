@@ -111,9 +111,28 @@ impl SoftwareVersion {
 
 #[cfg(test)]
 mod tests {
+    use core::str::FromStr;
     use crate::message::st::sw_version::{CompilerType, Library};
     use crate::message::StMessageData;
     use crate::{NmeaMessage, NmeaParser};
+
+    #[test]
+    fn library_from_str() {
+        assert_eq!(Library::from_str("GNSSLIB").unwrap(), Library::GnssLib);
+        assert_eq!(Library::from_str("OS20LIB").unwrap(), Library::Os20Lib);
+        assert_eq!(Library::from_str("GPSAPP").unwrap(), Library::GpsApp);
+        assert_eq!(Library::from_str("BINIMG").unwrap(), Library::BinImg);
+        assert_eq!(Library::from_str("SWCG").unwrap(), Library::SwCg);
+        assert_eq!(Library::from_str("PID").unwrap(), Library::Pid);
+        assert!(Library::from_str("UNKNOWN").is_err());
+    }
+
+    #[test]
+    fn compiler_from_str() {
+        assert_eq!(CompilerType::from_str("ARM").unwrap(), CompilerType::Arm);
+        assert_eq!(CompilerType::from_str("GNU").unwrap(), CompilerType::Gnu);
+        assert!(CompilerType::from_str("UNKNOWN").is_err());
+    }
 
     #[test]
     fn test_sw_version() {

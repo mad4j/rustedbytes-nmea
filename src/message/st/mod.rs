@@ -26,7 +26,6 @@ pub enum StMessageData {
     ConfigGeofenceCircleConfigureResult(Result<(), ()>),
     ConfigLowPowerOnOffResult(Result<LowPowerOnOff, ()>),
     ConfigLpaResult(Result<(), ()>),
-    ConfigOdometerResult(Result<(), ()>),
     ConfigStandbyEnableResult(Result<(), ()>),
     ConfigStandbyForceResult(Result<(), ()>),
     GetUniqueCode(Result<GetUniqueCode, ()>),
@@ -74,12 +73,6 @@ impl ParsedSentence {
             x if x.starts_with(b"PSTMCFGLPAERROR*") => {
                 Some(StMessageData::ConfigLpaResult(Err(())))
             }
-            x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => {
-                Some(StMessageData::ConfigOdometerResult(Ok(())))
-            }
-            x if x.starts_with(b"PSTMCFGGEOFENCEERROR*") => {
-                Some(StMessageData::ConfigOdometerResult(Err(())))
-            }
             x if x.starts_with(b"PSTMVER,STA80") => {
                 HardwareVersion::parse(self).map(StMessageData::HardwareVersion)
             }
@@ -109,5 +102,148 @@ impl ParsedSentence {
             }
             _ => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::message::StMessageData;
+    use crate::NmeaMessage;
+
+    #[test]
+    fn configure_anti_jam_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMCFGAJMOK*1D\r\n" as &[u8], true),
+            (b"$PSTMCFGAJMERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigAntiJamResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_geofence_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMCFGGEOFENCEOK*1D\r\n" as &[u8], true),
+            (b"$PSTMCFGGEOFENCEERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigGeofenceEnableResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_geofence_circle_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMCFGGEOCIROK*1D\r\n" as &[u8], true),
+            (b"$PSTMCFGGEOCIRERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigGeofenceCircleConfigureResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_low_power_on_off_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMLOWPOWERON,100,12,1,1,1,1,10000,10,1,1,10,20*0B\r\n" as &[u8], true),
+            (b"$PSTMLOWPOWERERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigLowPowerOnOffResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_lpa_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMCFGLPAOK*1D\r\n" as &[u8], true),
+            (b"$PSTMCFGLPAERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigLpaResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_standby_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMSTANDBYENABLEOK*1D\r\n" as &[u8], true),
+            (b"$PSTMSTANDBYENABLEERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigStandbyEnableResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_standby_force_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMFORCESTANDBYOK*1D\r\n" as &[u8], true),
+            (b"$PSTMFORCESTANDBYERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::ConfigStandbyForceResult(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+    }
+
+    #[test]
+    fn configure_get_unique_code_result_message() {
+        let parser = crate::NmeaParser::new();
+        [
+            (b"$PSTMGETUCODEOK,0123456789ABCDEF0123456789ABCDEF*1D\r\n" as &[u8], true),
+            (b"$PSTMGETUCODEERROR*1D\r\n", false),
+        ].iter().for_each(|(cmd, result)| {
+            let (msg, _i) = parser.parse_bytes(cmd).unwrap();
+            let msg = msg.unwrap();
+            let msg = match msg {
+                NmeaMessage::StPropriety(StMessageData::GetUniqueCode(val)) => val,
+                _ => panic!("Unexpected message type"),
+            };
+            assert_eq!(*result, msg.is_ok());
+        });
+
     }
 }

@@ -61,6 +61,27 @@ pub struct KalmanFilterConfiguration {
     pub fde_status: bool,
 }
 
+impl From<u8> for KalmanFilterConfiguration {
+    fn from(kf_config_status: u8) -> Self {
+        Self {
+            walking_mode: (kf_config_status & 0b0000_0001) != 0,
+            stop_detection: (kf_config_status & 0b0000_0010) != 0,
+            frequency_ramp_on: (kf_config_status & 0b0000_0100) != 0,
+            velocity_estimator_model: if (kf_config_status & 0b0000_1000) != 0 {
+                KalmanVelocityEstimatorModel::MultipleModel
+            } else {
+                KalmanVelocityEstimatorModel::SingleModel
+            },
+            velocity_estimator_filter: if (kf_config_status & 0b0001_0000) != 0 {
+                KalmanVelocityEstimatorFilter::Fast
+            } else {
+                KalmanVelocityEstimatorFilter::Slow
+            },
+            fde_status: (kf_config_status & 0b0010_0000) != 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TimeAndSatelliteInformation {
     pub week: u16,
@@ -138,5 +159,87 @@ impl TimeAndSatelliteInformation {
             time_aux_tow,
             time_aux_validity,
         })
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::NmeaParser;
+
+    #[test]
+    fn test_parse_kf_config_status() {
+        // Test case for kf_config_status = 0x21 (00100001)
+        let kf_config_status_val = 0x21;
+        let kf_config = KalmanFilterConfiguration::from(kf_config_status_val);
+
+        assert!(kf_config.walking_mode); // Bit 0 is 1
+        assert!(!kf_config.stop_detection); // Bit 1 is 0
+        assert!(!kf_config.frequency_ramp_on); // Bit 2 is 0
+        assert!(matches!(
+            kf_config.velocity_estimator_model,
+            KalmanVelocityEstimatorModel::SingleModel
+        )); // Bit 3 is 0
+        assert!(!matches!(
+            kf_config.velocity_estimator_filter,
+            KalmanVelocityEstimatorFilter::Fast
+        )); // Bit 4 is 0
+        assert!(kf_config.fde_status); // Bit 5 is 1
+
+        // Test case for kf_config_status = 0x1E (00011110)
+        let kf_config_status_val = 0x1E;
+        let kf_config = KalmanFilterConfiguration::from(kf_config_status_val);
+
+        assert!(!kf_config.walking_mode); // Bit 0 is 0
+        assert!(kf_config.stop_detection); // Bit 1 is 1
+        assert!(kf_config.frequency_ramp_on); // Bit 2 is 1
+        assert!(matches!(
+            kf_config.velocity_estimator_model,
+            KalmanVelocityEstimatorModel::MultipleModel
+        )); // Bit 3 is 1
+        assert!(matches!(
+            kf_config.velocity_estimator_filter,
+            KalmanVelocityEstimatorFilter::Fast
+        )); // Bit 4 is 1
+        assert!(!kf_config.fde_status); // Bit 5 is 0
+
+        // Test case for kf_config_status = 0x00 (00000000)
+        let kf_config_status_val = 0x00;
+        let kf_config = KalmanFilterConfiguration::from(kf_config_status_val);
+
+        assert!(!kf_config.walking_mode);
+        assert!(!kf_config.stop_detection);
+        assert!(!kf_config.frequency_ramp_on);
+        assert!(matches!(
+            kf_config.velocity_estimator_model,
+            KalmanVelocityEstimatorModel::SingleModel
+        ));
+        assert!(matches!(
+            kf_config.velocity_estimator_filter,
+            KalmanVelocityEstimatorFilter::Slow
+        ));
+        assert!(!kf_config.fde_status);
+    }
+
+    #[test]
+    fn test_parse_pstmtg() {
+        let parser = NmeaParser::new();
+        let (msg, _size) = parser
+            .parse_bytes(b"$PSTMTG,2267,395020000,12,1234567890,8,123456789,21,15,1,2,3,2267,395020.000,1,2267,395020.000,1*0C\r\n")
+            .unwrap();
+        let msg = match msg.unwrap() {
+            crate::NmeaMessage::StPropriety(crate::message::StMessageData::TimeAndSatelliteInformation(msg)) => msg,
+            _ => panic!("Unexpected message type"),
+        };
+
+        assert_eq!(msg.week, 2267);
+        assert_eq!(msg.tow, 395020000);
+        assert_eq!(msg.total_satellites, 12);
+        assert_eq!(msg.cpu_time, 1234567890);
+        assert_eq!(msg.time_valid, 8);
+        assert_eq!(msg.nco, 123456789);
+        assert_eq!(msg.constellation_mask, 15);
+        assert_eq!(msg.time_best_sat_type, 1);
     }
 }
