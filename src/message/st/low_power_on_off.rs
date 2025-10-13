@@ -72,15 +72,15 @@ impl LowPowerOnOff {
         let ehpe_threshold = sentence.parse_field(1)?;
         let max_tracked_sats = sentence.parse_field(2)?;
         let switch_constellation_features = sentence.parse_field(3)?;
-        let duty_cycle_enable = sentence.parse_field(4)?;
-        let duty_cycle_ms_signal_off = sentence.parse_field(5)?;
+        let duty_cycle_enable = sentence.parse_field::<u8>(4)? == 1;
+        let duty_cycle_ms_signal_off = sentence.parse_field::<u8>(5)? == 1;
         let periodic_mode = sentence
             .parse_field::<u8>(6)
             .and_then(|v| PeriodicMode::try_from(v).ok())?;
         let fix_period = sentence.parse_field(7)?;
         let fix_on_time = sentence.parse_field(8)?;
-        let ephemeris_refresh = sentence.parse_field(9)?;
-        let rtc_calibration = sentence.parse_field(10)?;
+        let ephemeris_refresh = sentence.parse_field::<u8>(9)? == 1;
+        let rtc_calibration = sentence.parse_field::<u8>(10)? == 1;
         let no_fix_cnt = sentence.parse_field(11)?;
         let no_fix_off = sentence.parse_field(12)?;
 
@@ -99,4 +99,46 @@ impl LowPowerOnOff {
             no_fix_off,
         })
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::message::StMessageData;
+    use super::*;
+
+    #[test]
+    fn test_low_power_on_off() {
+        let parser = crate::NmeaParser::new();
+        let (msg, _i) = parser
+            .parse_bytes(b"$PSTMLOWPOWERON,100,12,1,1,1,1,10000,10,1,1,10,20*0B\r\n")
+            .unwrap();
+
+        let msg = match msg {
+            Some(crate::NmeaMessage::StPropriety(StMessageData::ConfigLowPowerOnOffResult(msg))) => msg.unwrap(),
+            _ => panic!("Unexpected message type"),
+        };
+
+        assert_eq!(msg.ehpe_threshold, 100);
+        assert_eq!(msg.max_tracked_sats, 12);
+        assert_eq!(msg.switch_constellation_features, 1);
+        assert_eq!(msg.duty_cycle_enable, true);
+        assert_eq!(msg.duty_cycle_ms_signal_off, true);
+        assert_eq!(msg.periodic_mode, PeriodicMode::Active);
+        assert_eq!(msg.fix_period, 10000);
+        assert_eq!(msg.fix_on_time, 10);
+        assert_eq!(msg.ephemeris_refresh, true);
+        assert_eq!(msg.rtc_calibration, true);
+        assert_eq!(msg.no_fix_cnt, 10);
+        assert_eq!(msg.no_fix_off, 20);
+    }
+
+    #[test]
+    fn test_periodic_mode_try_from() {
+        assert_eq!(PeriodicMode::try_from(0).unwrap(), PeriodicMode::Off);
+        assert_eq!(PeriodicMode::try_from(1).unwrap(), PeriodicMode::Active);
+        assert_eq!(PeriodicMode::try_from(3).unwrap(), PeriodicMode::Standby);
+        assert!(PeriodicMode::try_from(2).is_err());
+        assert!(PeriodicMode::try_from(4).is_err());
+    }
+
 }
