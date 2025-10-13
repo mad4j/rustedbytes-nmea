@@ -9,6 +9,7 @@ pub use st::{
     geofence::{ConfigureEnableGeofenceCircles, GeofenceToleranceLevel},
     geofence_circle::ConfigureGeofenceCircle,
     get_sw_version::GetSoftwareVersion,
+    low_power_on_off::{ConfigureLowPowerOnOff, ConstellationMask},
     lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
     odometer::ConfigureOdometer,
 };

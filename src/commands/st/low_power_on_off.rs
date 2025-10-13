@@ -28,6 +28,7 @@
 //! Periodic mode settings
 //! Periodic mode                   Decimal, 1 digit    Setup Active or Standby periodic mode
 //!                                                     0: OFF
+//!                                                     1: Active Periodic mode
 //!                                                     3: Standby Periodic mode
 //! FixPeriod                       Decimal, 5 digits   Interval between two fixes [s]. O means no periodic fix is required.
 //! FixOnTime                       Decimal, 2 digits   Number of fixes reported for each interval
@@ -76,7 +77,27 @@ impl ConstellationMask {
     }
 }
 
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum PeriodicMode {
+    Off,
+    Active,
+    Standby
+}
+
+impl PeriodicMode {
+    pub fn to_string(&self) -> Result<String<1>, ()> {
+        let val = match self {
+            PeriodicMode::Off => 0,
+            PeriodicMode::Active => 1,
+            PeriodicMode::Standby => 3
+        };
+        let val: String<1> = format!("{}", val).map_err(|_| ())?;
+        Ok(val)
+    }
+}
+
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ConfigureLowPowerOnOff {
     pub low_power_enable: bool,
     pub constellation_mask: ConstellationMask,
@@ -85,7 +106,7 @@ pub struct ConfigureLowPowerOnOff {
     pub switch_constellation_features: bool,
     pub duty_cycle_enable: bool,
     pub duty_cycle_fix_period: u8,
-    pub standby_periodic_mode: bool,
+    pub periodic_mode: PeriodicMode,
     pub fix_period: u32,
     pub fix_on_time: u8,
     pub ephemeris_refresh: bool,
@@ -108,7 +129,7 @@ impl Command for ConfigureLowPowerOnOff {
             switch_constellation_features,
             duty_cycle_enable,
             duty_cycle_fix_period,
-            standby_periodic_mode,
+            periodic_mode,
             fix_period,
             fix_on_time,
             ephemeris_refresh,
@@ -117,14 +138,16 @@ impl Command for ConfigureLowPowerOnOff {
             no_fix_off
         } = self;
         if *low_power_enable {
-            if *standby_periodic_mode {
+            if *periodic_mode != PeriodicMode::Off {
                 let fix_period = if *fix_period > 99999 { 99999 } else { *fix_period };
                 let fix_on_time = if *fix_on_time > 99 { 99 } else { *fix_on_time };
                 let no_fix_cnt = if *no_fix_cnt > 99 { 99 } else { *no_fix_cnt };
                 let no_fix_off = if *no_fix_off > 99 { 99 } else { *no_fix_off };
+                let periodic_mode = periodic_mode.to_string()?;
                 let mut s = format!(
-                    "${},1,0,0,0,0,0,0,3,{},{},{},{},{},{}",
+                    "${},1,0,0,0,0,0,0,{},{},{},{},{},{},{}",
                     Self::CMD,
+                    periodic_mode,
                     fix_period,
                     fix_on_time,
                     if *ephemeris_refresh { 1 } else { 0 },
@@ -192,7 +215,7 @@ mod tests {
             switch_constellation_features: false,
             duty_cycle_enable: false,
             duty_cycle_fix_period: 0,
-            standby_periodic_mode: false,
+            periodic_mode: PeriodicMode::Off,
             fix_period: 0,
             fix_on_time: 0,
             ephemeris_refresh: false,
@@ -201,5 +224,59 @@ mod tests {
             no_fix_off: 0,
         };
         assert_eq!(cmd.to_string().unwrap(), "$PSTMLOWPOWERONOFF,0*43\r\n");
+    }
+
+    #[test]
+    fn test_standby_periodic_mode() {
+        let cmd = ConfigureLowPowerOnOff {
+            low_power_enable: true,
+            constellation_mask: ConstellationMask {
+                gps: false,
+                glonass: false,
+                qzss: false,
+                galileo: false,
+                beidou: false,
+            },
+            ehpe_threshold: 0,
+            max_tracked_satellites: 0,
+            switch_constellation_features: false,
+            duty_cycle_enable: false,
+            duty_cycle_fix_period: 0,
+            periodic_mode: PeriodicMode::Standby,
+            fix_period: 100,
+            fix_on_time: 10,
+            ephemeris_refresh: true,
+            rtc_calibration: true,
+            no_fix_cnt: 5,
+            no_fix_off: 5,
+        };
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMLOWPOWERONOFF,1,0,0,0,0,0,0,3,100,10,1,1,5,5*6D\r\n");
+    }
+
+    #[test]
+    fn test_non_periodic_mode() {
+        let cmd = ConfigureLowPowerOnOff {
+            low_power_enable: true,
+            constellation_mask: ConstellationMask {
+                gps: true,
+                glonass: true,
+                qzss: false,
+                galileo: false,
+                beidou: false,
+            },
+            ehpe_threshold: 100,
+            max_tracked_satellites: 10,
+            switch_constellation_features: true,
+            duty_cycle_enable: true,
+            duty_cycle_fix_period: 5,
+            periodic_mode: PeriodicMode::Off,
+            fix_period: 0,
+            fix_on_time: 0,
+            ephemeris_refresh: false,
+            rtc_calibration: false,
+            no_fix_cnt: 0,
+            no_fix_off: 0,
+        };
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMLOWPOWERONOFF,1,3,100,10,1,1,5,0,0,0,0,0,0,0*68\r\n");
     }
 }
