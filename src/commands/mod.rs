@@ -69,6 +69,9 @@ pub trait Command {
 
 #[cfg(test)]
 mod tests {
+    use heapless::String;
+    use crate::CommandError;
+
     #[test]
     fn test_nmea_checksum() {
         [
@@ -87,5 +90,17 @@ mod tests {
         .for_each(|(input, checksum)| {
             assert_eq!(super::nmea_checksum(input), checksum);
         })
+    }
+
+    #[test]
+    fn convert_from_errors() {
+        let mut s = String::<2>::new();
+        let err = s.push_str("Not going to be pushed").unwrap_err();
+        let ce: CommandError = err.into();
+        assert!(matches!(ce, CommandError::CapacityError));
+
+        let ce: CommandError = core::fmt::Error.into();
+        assert!(matches!(ce, CommandError::FormatError));
+
     }
 }
