@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn test_sw_version() {
         let parser = NmeaParser::new();
-        let (msg, size) = parser
+        let (msg, _size) = parser
             .parse_bytes(b"$PSTMVER,GNSSLIB_7.1.1.15_ARM*0A\r\n")
             .unwrap();
         let msg = msg.unwrap();

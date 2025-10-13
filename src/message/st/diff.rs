@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_parse_differential_correction_data() {
-        let mut parser = NmeaParser::new();
+        let parser = NmeaParser::new();
         let (msg, _size) = parser
             .parse_bytes(b"$PSTMDIFF,03,02,01,100,02,200,03,300*1C\r\n")
             .unwrap();

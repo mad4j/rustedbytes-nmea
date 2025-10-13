@@ -1,4 +1,5 @@
 use crate::message::st::diff::DifferentialCorrectionData;
+use crate::message::st::get_unique_code::GetUniqueCode;
 use crate::message::st::hw_version::HardwareVersion;
 use crate::message::st::low_power_on_off::LowPowerOnOff;
 use crate::message::st::standby_enable::StandbyEnableStatus;
@@ -8,6 +9,7 @@ use crate::message::ParsedSentence;
 use crate::MessageType;
 
 mod diff;
+mod get_unique_code;
 mod hw_version;
 mod low_power_on_off;
 mod standby_enable;
@@ -27,6 +29,7 @@ pub enum StMessageData {
     ConfigOdometerResult(Result<(), ()>),
     ConfigStandbyEnableResult(Result<(), ()>),
     ConfigStandbyForceResult(Result<(), ()>),
+    GetUniqueCode(Result<GetUniqueCode, ()>),
     SoftwareVersion(SoftwareVersion),
     HardwareVersion(HardwareVersion),
     StandbyEnableStatus(StandbyEnableStatus),
@@ -97,6 +100,12 @@ impl ParsedSentence {
             }
             x if x.starts_with(b"PSTMFORCESTANDBYERROR*") => {
                 Some(StMessageData::ConfigStandbyForceResult(Err(())))
+            }
+            x if x.starts_with(b"PSTMGETUCODEOK,") => {
+                GetUniqueCode::parse(self).map(|b| StMessageData::GetUniqueCode(Ok(b)))
+            }
+            x if x.starts_with(b"PSTMGETUCODEERROR*") => {
+                Some(StMessageData::GetUniqueCode(Err(())))
             }
             _ => None,
         }
