@@ -116,7 +116,9 @@ mod test {
         [
             (b"$PSTMCFGAJMOK*1D\r\n" as &[u8], true),
             (b"$PSTMCFGAJMERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -133,7 +135,9 @@ mod test {
         [
             (b"$PSTMCFGGEOFENCEOK*1D\r\n" as &[u8], true),
             (b"$PSTMCFGGEOFENCEERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -150,11 +154,15 @@ mod test {
         [
             (b"$PSTMCFGGEOCIROK*1D\r\n" as &[u8], true),
             (b"$PSTMCFGGEOCIRERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
-                NmeaMessage::StPropriety(StMessageData::ConfigGeofenceCircleConfigureResult(val)) => val,
+                NmeaMessage::StPropriety(StMessageData::ConfigGeofenceCircleConfigureResult(
+                    val,
+                )) => val,
                 _ => panic!("Unexpected message type"),
             };
             assert_eq!(*result, msg.is_ok());
@@ -165,9 +173,14 @@ mod test {
     fn configure_low_power_on_off_result_message() {
         let parser = crate::NmeaParser::new();
         [
-            (b"$PSTMLOWPOWERON,100,12,1,1,1,1,10000,10,1,1,10,20*0B\r\n" as &[u8], true),
+            (
+                b"$PSTMLOWPOWERON,100,12,1,1,1,1,10000,10,1,1,10,20*0B\r\n" as &[u8],
+                true,
+            ),
             (b"$PSTMLOWPOWERERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -184,7 +197,9 @@ mod test {
         [
             (b"$PSTMCFGLPAOK*1D\r\n" as &[u8], true),
             (b"$PSTMCFGLPAERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -201,7 +216,9 @@ mod test {
         [
             (b"$PSTMSTANDBYENABLEOK*1D\r\n" as &[u8], true),
             (b"$PSTMSTANDBYENABLEERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -218,7 +235,9 @@ mod test {
         [
             (b"$PSTMFORCESTANDBYOK*1D\r\n" as &[u8], true),
             (b"$PSTMFORCESTANDBYERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -233,9 +252,14 @@ mod test {
     fn configure_get_unique_code_result_message() {
         let parser = crate::NmeaParser::new();
         [
-            (b"$PSTMGETUCODEOK,0123456789ABCDEF0123456789ABCDEF*1D\r\n" as &[u8], true),
+            (
+                b"$PSTMGETUCODEOK,0123456789ABCDEF0123456789ABCDEF*1D\r\n" as &[u8],
+                true,
+            ),
             (b"$PSTMGETUCODEERROR*1D\r\n", false),
-        ].iter().for_each(|(cmd, result)| {
+        ]
+        .iter()
+        .for_each(|(cmd, result)| {
             let (msg, _i) = parser.parse_bytes(cmd).unwrap();
             let msg = msg.unwrap();
             let msg = match msg {
@@ -244,6 +268,5 @@ mod test {
             };
             assert_eq!(*result, msg.is_ok());
         });
-
     }
 }

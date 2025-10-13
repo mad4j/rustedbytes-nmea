@@ -35,9 +35,7 @@ impl StandbyEnableStatus {
     pub(crate) fn parse(sentence: &crate::message::ParsedSentence) -> Option<Self> {
         let status = sentence.parse_field::<u8>(1)?;
         let status = PeriodicStandbyMode::try_from(status).ok()?;
-        Some(Self {
-            status,
-        })
+        Some(Self { status })
     }
 }
 

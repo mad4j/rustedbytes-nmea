@@ -162,7 +162,6 @@ impl TimeAndSatelliteInformation {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -229,7 +228,9 @@ mod tests {
             .parse_bytes(b"$PSTMTG,2267,395020000,12,1234567890,8,123456789,21,15,1,2,3,2267,395020.000,1,2267,395020.000,1*0C\r\n")
             .unwrap();
         let msg = match msg.unwrap() {
-            crate::NmeaMessage::StPropriety(crate::message::StMessageData::TimeAndSatelliteInformation(msg)) => msg,
+            crate::NmeaMessage::StPropriety(
+                crate::message::StMessageData::TimeAndSatelliteInformation(msg),
+            ) => msg,
             _ => panic!("Unexpected message type"),
         };
 

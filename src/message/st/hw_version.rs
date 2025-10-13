@@ -81,28 +81,61 @@ impl HardwareVersion {
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
     use crate::message::StMessageData;
     use crate::NmeaParser;
+    use core::str::FromStr;
 
     #[test]
     fn hardware_type_from_str() {
-        assert_eq!(super::HarwareType::from_str("STA8088").unwrap(), super::HarwareType::Sta8088);
-        assert_eq!(super::HarwareType::from_str("STA8089").unwrap(), super::HarwareType::Sta8089);
-        assert_eq!(super::HarwareType::from_str("STA8090").unwrap(), super::HarwareType::Sta8090);
+        assert_eq!(
+            super::HarwareType::from_str("STA8088").unwrap(),
+            super::HarwareType::Sta8088
+        );
+        assert_eq!(
+            super::HarwareType::from_str("STA8089").unwrap(),
+            super::HarwareType::Sta8089
+        );
+        assert_eq!(
+            super::HarwareType::from_str("STA8090").unwrap(),
+            super::HarwareType::Sta8090
+        );
         assert!(super::HarwareType::from_str("STA8091").is_err());
     }
 
     #[test]
     fn hardware_mask_from_str() {
-        assert!(matches!(super::Mask::from_str("0x2229D041").unwrap(), super::Mask::Bb));
-        assert!(matches!(super::Mask::from_str("0x3229D041").unwrap(), super::Mask::Bc));
-        assert!(matches!(super::Mask::from_str("0x122BC043").unwrap(), super::Mask::Aa));
-        assert!(matches!(super::Mask::from_str("0x222BC043").unwrap(), super::Mask::Ab));
-        assert!(matches!(super::Mask::from_str("0x322BC043").unwrap(), super::Mask::Ba));
-        assert!(matches!(super::Mask::from_str("0x422BC043").unwrap(), super::Mask::Bb));
-        assert!(matches!(super::Mask::from_str("0x522BC043").unwrap(), super::Mask::Bc));
-        assert!(matches!(super::Mask::from_str("0x622BC043").unwrap(), super::Mask::Bd));
+        assert!(matches!(
+            super::Mask::from_str("0x2229D041").unwrap(),
+            super::Mask::Bb
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x3229D041").unwrap(),
+            super::Mask::Bc
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x122BC043").unwrap(),
+            super::Mask::Aa
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x222BC043").unwrap(),
+            super::Mask::Ab
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x322BC043").unwrap(),
+            super::Mask::Ba
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x422BC043").unwrap(),
+            super::Mask::Bb
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x522BC043").unwrap(),
+            super::Mask::Bc
+        ));
+        assert!(matches!(
+            super::Mask::from_str("0x622BC043").unwrap(),
+            super::Mask::Bd
+        ));
         assert!(super::Mask::from_str("0x00000000").is_err());
     }
 

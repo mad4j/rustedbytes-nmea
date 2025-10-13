@@ -69,8 +69,8 @@ pub trait Command {
 
 #[cfg(test)]
 mod tests {
-    use heapless::String;
     use crate::CommandError;
+    use heapless::String;
 
     #[test]
     fn test_nmea_checksum() {
@@ -101,6 +101,5 @@ mod tests {
 
         let ce: CommandError = core::fmt::Error.into();
         assert!(matches!(ce, CommandError::FormatError));
-
     }
 }

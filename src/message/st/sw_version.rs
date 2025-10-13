@@ -111,10 +111,10 @@ impl SoftwareVersion {
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
     use crate::message::st::sw_version::{CompilerType, Library};
     use crate::message::StMessageData;
     use crate::{NmeaMessage, NmeaParser};
+    use core::str::FromStr;
 
     #[test]
     fn library_from_str() {
