@@ -5,3 +5,4 @@ pub(crate) mod get_sw_version;
 pub(crate) mod low_power_on_off;
 pub(crate) mod lpa;
 pub(crate) mod odometer;
+pub(crate) mod standby_enable;

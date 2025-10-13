@@ -1,18 +1,16 @@
 use crate::message::st::diff::DifferentialCorrectionData;
 use crate::message::st::hw_version::HardwareVersion;
 use crate::message::st::low_power_on_off::LowPowerOnOff;
+use crate::message::st::standby_enable::StandbyEnableStatus;
 use crate::message::st::sw_version::SoftwareVersion;
 use crate::message::st::tg::TimeAndSatelliteInformation;
 use crate::message::ParsedSentence;
-use crate::message::StMessageData::{
-    ConfigAntiJamResult, ConfigGeofenceCircleConfigureResult, ConfigGeofenceEnableResult,
-    ConfigLowPowerOnOffResult, ConfigLpaResult, ConfigOdometerResult,
-};
 use crate::MessageType;
 
 mod diff;
 mod hw_version;
 mod low_power_on_off;
+mod standby_enable;
 mod sw_version;
 mod tg;
 
@@ -27,8 +25,10 @@ pub enum StMessageData {
     ConfigLowPowerOnOffResult(Result<LowPowerOnOff, ()>),
     ConfigLpaResult(Result<(), ()>),
     ConfigOdometerResult(Result<(), ()>),
+    ConfigStandbyEnableResult(Result<(), ()>),
     SoftwareVersion(SoftwareVersion),
     HardwareVersion(HardwareVersion),
+    StandbyEnableStatus(StandbyEnableStatus),
 }
 
 impl ParsedSentence {
@@ -42,31 +42,54 @@ impl ParsedSentence {
                 .map(|d| StMessageData::DifferentialCorrectionData(d)),
             x if x.starts_with(b"PSTMTG") => TimeAndSatelliteInformation::parse(self)
                 .map(|d| StMessageData::TimeAndSatelliteInformation(d)),
-            x if x.starts_with(b"PSTMCFGAJMOK*") => Some(ConfigAntiJamResult(Ok(()))),
-            x if x.starts_with(b"PSTMCFGAJMERROR*") => Some(ConfigAntiJamResult(Err(()))),
-            x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => Some(ConfigGeofenceEnableResult(Ok(()))),
+            x if x.starts_with(b"PSTMCFGAJMOK*") => {
+                Some(StMessageData::ConfigAntiJamResult(Ok(())))
+            }
+            x if x.starts_with(b"PSTMCFGAJMERROR*") => {
+                Some(StMessageData::ConfigAntiJamResult(Err(())))
+            }
+            x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => {
+                Some(StMessageData::ConfigGeofenceEnableResult(Ok(())))
+            }
             x if x.starts_with(b"PSTMCFGGEOFENCEERROR*") => {
-                Some(ConfigGeofenceEnableResult(Err(())))
+                Some(StMessageData::ConfigGeofenceEnableResult(Err(())))
             }
             x if x.starts_with(b"PSTMCFGGEOCIROK*") => {
-                Some(ConfigGeofenceCircleConfigureResult(Ok(())))
+                Some(StMessageData::ConfigGeofenceCircleConfigureResult(Ok(())))
             }
             x if x.starts_with(b"PSTMCFGGEOCIRERROR*") => {
-                Some(ConfigGeofenceCircleConfigureResult(Err(())))
+                Some(StMessageData::ConfigGeofenceCircleConfigureResult(Err(())))
             }
-            x if x.starts_with(b"PSTMLOWPOWERERROR*") => Some(ConfigLowPowerOnOffResult(Err(()))),
-            x if x.starts_with(b"PSTMLOWPOWERON,") => Some(ConfigLowPowerOnOffResult(Ok(
-                LowPowerOnOff::parse(self).unwrap(),
-            ))),
-            x if x.starts_with(b"PSTMCFGLPAOK*") => Some(ConfigLpaResult(Ok(()))),
-            x if x.starts_with(b"PSTMCFGLPAERROR*") => Some(ConfigLpaResult(Err(()))),
-            x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => Some(ConfigOdometerResult(Ok(()))),
-            x if x.starts_with(b"PSTMCFGGEOFENCEERROR*") => Some(ConfigOdometerResult(Err(()))),
+            x if x.starts_with(b"PSTMLOWPOWERERROR*") => {
+                Some(StMessageData::ConfigLowPowerOnOffResult(Err(())))
+            }
+            x if x.starts_with(b"PSTMLOWPOWERON,") => Some(
+                StMessageData::ConfigLowPowerOnOffResult(Ok(LowPowerOnOff::parse(self).unwrap())),
+            ),
+            x if x.starts_with(b"PSTMCFGLPAOK*") => Some(StMessageData::ConfigLpaResult(Ok(()))),
+            x if x.starts_with(b"PSTMCFGLPAERROR*") => {
+                Some(StMessageData::ConfigLpaResult(Err(())))
+            }
+            x if x.starts_with(b"PSTMCFGGEOFENCEOK*") => {
+                Some(StMessageData::ConfigOdometerResult(Ok(())))
+            }
+            x if x.starts_with(b"PSTMCFGGEOFENCEERROR*") => {
+                Some(StMessageData::ConfigOdometerResult(Err(())))
+            }
             x if x.starts_with(b"PSTMVER,STA80") => {
                 HardwareVersion::parse(self).map(|b| StMessageData::HardwareVersion(b))
             }
             x if x.starts_with(b"PSTMVER,") => {
                 SoftwareVersion::parse(self).map(|b| StMessageData::SoftwareVersion(b))
+            }
+            x if x.starts_with(b"PSTMSTANDBYENABLE,") => {
+                StandbyEnableStatus::parse(self).map(|s| StMessageData::StandbyEnableStatus(s))
+            }
+            x if x.starts_with(b"PSTMSTANDBYENABLEOK*") => {
+                Some(StMessageData::ConfigStandbyEnableResult(Ok(())))
+            }
+            x if x.starts_with(b"PSTMSTANDBYENABLEERROR*") => {
+                Some(StMessageData::ConfigStandbyEnableResult(Err(())))
             }
             _ => None,
         }
