@@ -26,6 +26,7 @@ pub enum StMessageData {
     ConfigLpaResult(Result<(), ()>),
     ConfigOdometerResult(Result<(), ()>),
     ConfigStandbyEnableResult(Result<(), ()>),
+    ConfigStandbyForceResult(Result<(), ()>),
     SoftwareVersion(SoftwareVersion),
     HardwareVersion(HardwareVersion),
     StandbyEnableStatus(StandbyEnableStatus),
@@ -90,6 +91,12 @@ impl ParsedSentence {
             }
             x if x.starts_with(b"PSTMSTANDBYENABLEERROR*") => {
                 Some(StMessageData::ConfigStandbyEnableResult(Err(())))
+            }
+            x if x.starts_with(b"PSTMFORCESTANDBYOK*") => {
+                Some(StMessageData::ConfigStandbyForceResult(Ok(())))
+            }
+            x if x.starts_with(b"PSTMFORCESTANDBYERROR*") => {
+                Some(StMessageData::ConfigStandbyForceResult(Err(())))
             }
             _ => None,
         }

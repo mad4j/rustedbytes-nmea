@@ -6,3 +6,4 @@ pub(crate) mod low_power_on_off;
 pub(crate) mod lpa;
 pub(crate) mod odometer;
 pub(crate) mod standby_enable;
+pub(crate) mod standby_force;

@@ -13,6 +13,7 @@ pub use st::{
     lpa::{ConfigureLowPowerAlgorithm, LowPowerAlgorithmFeature},
     odometer::ConfigureOdometer,
     standby_enable::{ConfigureStandbyEnable, StandbyEnableCheckStatus},
+    standby_force::ConfigureStandbyForce,
 };
 
 /// Generate NMEA checksum for a sentence
