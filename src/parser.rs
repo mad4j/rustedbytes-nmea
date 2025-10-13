@@ -131,9 +131,7 @@ impl NmeaParser {
             MessageType::VTG => parsed.as_vtg().map(NmeaMessage::VTG),
             MessageType::GNS => parsed.as_gns().map(NmeaMessage::GNS),
             #[cfg(feature = "st-teseo-liv3")]
-            MessageType::PSTM => parsed
-                .as_st(&buffer[1..])
-                .map(|b| NmeaMessage::StPropriety(b)),
+            MessageType::PSTM => parsed.as_st(&buffer[1..]).map(NmeaMessage::StPropriety),
             MessageType::Unknown => None,
         }
     }

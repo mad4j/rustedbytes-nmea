@@ -1,4 +1,4 @@
-use heapless::{format, String};
+use heapless::{format, CapacityError, String};
 
 #[cfg(feature = "st-teseo-liv3")]
 mod st;
@@ -30,18 +30,40 @@ pub(crate) fn nmea_checksum(sentence: &str) -> u8 {
     trimmed.bytes().fold(0u8, |acc, b| acc ^ b)
 }
 
+#[derive(Debug)]
+pub enum CommandError {
+    CapacityError,
+    FormatError,
+}
+
+impl From<CapacityError> for CommandError {
+    fn from(_value: CapacityError) -> Self {
+        CommandError::CapacityError
+    }
+}
+
+impl From<core::fmt::Error> for CommandError {
+    fn from(_value: core::fmt::Error) -> Self {
+        CommandError::FormatError
+    }
+}
+
 pub trait Command {
     const MAX_LEN: usize;
     const CMD: &'static str;
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()>;
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError>;
 
-    fn append_checksum_and_crlf(&self, val: &mut String<{ Self::MAX_LEN }>) -> Result<(), ()> {
+    fn append_checksum_and_crlf(
+        &self,
+        val: &mut String<{ Self::MAX_LEN }>,
+    ) -> Result<(), CommandError> {
         let checksum = nmea_checksum(val.as_str());
-        val.push_str("*").map_err(|_| ())?;
-        let checksum: String<2> = format!("{:X}", checksum).map_err(|_| ())?; // Max 0xFF, so 2 characters should be enough
-        val.push_str(checksum.as_str()).map_err(|_| ())?;
-        val.push_str("\r\n").map_err(|_| ())
+        val.push_str("*")?;
+        let checksum: String<2> = format!("{:X}", checksum)?; // Max 0xFF, so 2 characters should be enough
+        val.push_str(checksum.as_str())?;
+        val.push_str("\r\n")?;
+        Ok(())
     }
 }
 

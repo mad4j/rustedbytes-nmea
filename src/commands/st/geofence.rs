@@ -13,7 +13,7 @@
 //!
 //! $PSTMCGGEOFENCE, <en>, <tol>*<checksum><cr><lf>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone, Copy)]
@@ -35,14 +35,13 @@ impl Command for ConfigureEnableGeofenceCircles {
     const MAX_LEN: usize = 22 + 2;
     const CMD: &'static str = "PSTMCGGEOFENCE";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let mut s = format!(
             "${},{},{}",
             Self::CMD,
             if self.en { 1 } else { 0 },
             self.tol as u8
-        )
-        .map_err(|_| ())?;
+        )?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

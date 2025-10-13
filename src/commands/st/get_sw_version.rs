@@ -15,7 +15,7 @@
 //!
 //! $PSTMGETSWVER,<id>*<checksum><cr><lf>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone, Copy)]
@@ -41,8 +41,8 @@ impl Command for GetSoftwareVersion {
     const MAX_LEN: usize = 20 + 4;
     const CMD: &'static str = "PSTMGETSWVER";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
-        let mut s = format!("${},{}", Self::CMD, self.lib_id as u8).map_err(|_| ())?;
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
+        let mut s = format!("${},{}", Self::CMD, self.lib_id as u8)?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

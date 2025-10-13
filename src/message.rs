@@ -85,9 +85,9 @@ impl ParsedSentence {
 
         for c in hex_str.chars() {
             let c = match c {
-                'a'..='f' => c as u8 - ('a' as u8) + 10,
-                'A'..='F' => c as u8 - ('A' as u8) + 10,
-                '0'..='9' => c as u8 - '0' as u8,
+                'a'..='f' => c as u8 - b'a' + 10,
+                'A'..='F' => c as u8 - b'A' + 10,
+                '0'..='9' => c as u8 - b'0',
                 _ => return None,
             };
 

@@ -43,9 +43,9 @@ impl ParsedSentence {
 
         match buffer {
             x if x.starts_with(b"PSTMDIFF") => DifferentialCorrectionData::parse(self)
-                .map(|d| StMessageData::DifferentialCorrectionData(d)),
+                .map(StMessageData::DifferentialCorrectionData),
             x if x.starts_with(b"PSTMTG") => TimeAndSatelliteInformation::parse(self)
-                .map(|d| StMessageData::TimeAndSatelliteInformation(d)),
+                .map(StMessageData::TimeAndSatelliteInformation),
             x if x.starts_with(b"PSTMCFGAJMOK*") => {
                 Some(StMessageData::ConfigAntiJamResult(Ok(())))
             }
@@ -81,13 +81,13 @@ impl ParsedSentence {
                 Some(StMessageData::ConfigOdometerResult(Err(())))
             }
             x if x.starts_with(b"PSTMVER,STA80") => {
-                HardwareVersion::parse(self).map(|b| StMessageData::HardwareVersion(b))
+                HardwareVersion::parse(self).map(StMessageData::HardwareVersion)
             }
             x if x.starts_with(b"PSTMVER,") => {
-                SoftwareVersion::parse(self).map(|b| StMessageData::SoftwareVersion(b))
+                SoftwareVersion::parse(self).map(StMessageData::SoftwareVersion)
             }
             x if x.starts_with(b"PSTMSTANDBYENABLE,") => {
-                StandbyEnableStatus::parse(self).map(|s| StMessageData::StandbyEnableStatus(s))
+                StandbyEnableStatus::parse(self).map(StMessageData::StandbyEnableStatus)
             }
             x if x.starts_with(b"PSTMSTANDBYENABLEOK*") => {
                 Some(StMessageData::ConfigStandbyEnableResult(Ok(())))

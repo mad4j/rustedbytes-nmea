@@ -154,7 +154,7 @@ impl NmeaMessage {
     /// Extract ST propriety data if this is an ST message
     pub fn as_st(&self) -> Option<&StMessageData> {
         match self {
-            NmeaMessage::StPropriety(data) => Some(&data),
+            NmeaMessage::StPropriety(data) => Some(data),
             _ => None,
         }
     }

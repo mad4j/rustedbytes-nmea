@@ -44,6 +44,7 @@
 //! sum><cr><lf>
 
 use crate::commands::Command;
+use crate::CommandError;
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -76,7 +77,7 @@ impl Command for ConfigureLowPowerAlgorithm {
     const MAX_LEN: usize = 31 + 21;
     const CMD: &'static str = "PSTMCFGLPA";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let en_pa = if self.en_pa { 1 } else { 0 };
         let feat = match self.feat {
             LowPowerAlgorithmFeature::PeriodicModeDisabled => 0,
@@ -99,8 +100,7 @@ impl Command for ConfigureLowPowerAlgorithm {
             self.num_of_sat,
             self.duty_off,
             self.const_type
-        )
-        .map_err(|_| ())?;
+        )?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

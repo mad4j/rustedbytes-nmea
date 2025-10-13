@@ -13,7 +13,7 @@
 //!
 //! $PSTMCFGAJM,‹gpsmode>,‹glonas smode›*<checksum><cr><lf>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone, Copy)]
@@ -33,14 +33,13 @@ pub struct ConfigureAntiJamming {
 impl Command for ConfigureAntiJamming {
     const MAX_LEN: usize = 18 + 2;
     const CMD: &'static str = "PSTMCFGAJM";
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let mut s = format!(
             "${},{},{}",
             Self::CMD,
             self.gpsmode as u8,
             self.glonassmode as u8
-        )
-        .map_err(|_| ())?;
+        )?;
         self.append_checksum_and_crlf(&mut s)?;
 
         Ok(s)

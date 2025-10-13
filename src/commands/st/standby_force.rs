@@ -5,7 +5,7 @@
 //! duration                    Decimal, 5 digits   Duration of the standby time in seconds
 //!
 //! $PSTMFORCESTANDBY,<duration>*<checksum><cr><lf>
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -17,15 +17,13 @@ impl Command for ConfigureStandbyForce {
     const MAX_LEN: usize = 28;
     const CMD: &'static str = "PSTMFORCESTANDBY";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let duration_seconds = if self.duration_seconds > 99999 {
             99999
         } else {
             self.duration_seconds
         };
-        let mut s = format!("${},{}", Self::CMD, duration_seconds)
-            .map_err(|_| duration_seconds)
-            .map_err(|_| ())?;
+        let mut s = format!("${},{}", Self::CMD, duration_seconds)?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

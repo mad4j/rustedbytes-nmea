@@ -15,7 +15,7 @@
 //! $PSTMSTANDBYENABLE,<on_off>*<checksum><cr><lf>
 
 use crate::commands::nmea_checksum;
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -25,12 +25,12 @@ impl Command for StandbyEnableCheckStatus {
     const MAX_LEN: usize = 23;
     const CMD: &'static str = "PSTMSTANDBYENABLE";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
-        let mut s = format!("${},", Self::CMD).map_err(|_| ())?;
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
+        let mut s = format!("${},", Self::CMD)?;
         let checksum = nmea_checksum(s.as_str());
-        let checksum: String<2> = format!("{:X}", checksum).map_err(|_| ())?;
-        s.push_str(checksum.as_str()).map_err(|_| ())?;
-        s.push_str("\r\n").map_err(|_| ())?;
+        let checksum: String<2> = format!("{:X}", checksum)?;
+        s.push_str(checksum.as_str())?;
+        s.push_str("\r\n")?;
         Ok(s)
     }
 }
@@ -44,9 +44,8 @@ impl Command for ConfigureStandbyEnable {
     const MAX_LEN: usize = 25;
     const CMD: &'static str = "PSTMSTANDBYENABLE";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
-        let mut s =
-            format!("${},{}", Self::CMD, if self.on_off { 1 } else { 0 }).map_err(|_| ())?;
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
+        let mut s = format!("${},{}", Self::CMD, if self.on_off { 1 } else { 0 })?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

@@ -52,7 +52,7 @@
 //! To Enable Periodic Mode:
 //! $PSTMLOWPOWERONOFF, 1,0, 0, 0, 0, 0, 0, <Periodic mode›, ‹Fixperiod›,<Number of fix>,<Ephemeris refresh›, <RTC refresh›,<No Fix timeout>,<No Fix timeout Off duration›*<checksum><cr><lf>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -65,14 +65,13 @@ pub struct ConstellationMask {
 }
 
 impl ConstellationMask {
-    pub fn to_string(&self) -> Result<String<3>, ()> {
-        let val = 0u32
-            | if self.gps { 0b0000_0001 } else { 0 }
+    pub fn to_string(&self) -> Result<String<3>, CommandError> {
+        let val = if self.gps { 0b0000_0001 } else { 0 }
             | if self.glonass { 0b0000_0010 } else { 0 }
             | if self.qzss { 0b0000_0100 } else { 0 }
             | if self.galileo { 0b0000_1000 } else { 0 }
             | if self.beidou { 0b1000_0000 } else { 0 };
-        let val: String<3> = format!("{}", val).map_err(|_| ())?;
+        let val: String<3> = format!("{}", val)?;
         Ok(val)
     }
 }
@@ -85,13 +84,13 @@ pub enum PeriodicMode {
 }
 
 impl PeriodicMode {
-    pub fn to_string(&self) -> Result<String<1>, ()> {
+    pub fn to_string(&self) -> Result<String<1>, CommandError> {
         let val = match self {
             PeriodicMode::Off => 0,
             PeriodicMode::Active => 1,
             PeriodicMode::Standby => 3,
         };
-        let val: String<1> = format!("{}", val).map_err(|_| ())?;
+        let val: String<1> = format!("{}", val)?;
         Ok(val)
     }
 }
@@ -119,7 +118,7 @@ impl Command for ConfigureLowPowerOnOff {
     const MAX_LEN: usize = 35 + 26;
     const CMD: &'static str = "PSTMLOWPOWERONOFF";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let Self {
             low_power_enable,
             constellation_mask,
@@ -157,8 +156,7 @@ impl Command for ConfigureLowPowerOnOff {
                     if *rtc_calibration { 1 } else { 0 },
                     no_fix_cnt,
                     no_fix_off
-                )
-                .map_err(|_| ())?;
+                )?;
                 self.append_checksum_and_crlf(&mut s)?;
                 Ok(s)
             } else {
@@ -187,13 +185,12 @@ impl Command for ConfigureLowPowerOnOff {
                     if *switch_constellation_features { 1 } else { 0 },
                     if *duty_cycle_enable { 1 } else { 0 },
                     duty_cycle_fix_period,
-                )
-                .map_err(|_| ())?;
+                )?;
                 self.append_checksum_and_crlf(&mut s)?;
                 Ok(s)
             }
         } else {
-            let mut s = format!("${},0", Self::CMD).map_err(|_| ())?;
+            let mut s = format!("${},0", Self::CMD)?;
             self.append_checksum_and_crlf(&mut s)?;
             Ok(s)
         }

@@ -4,7 +4,7 @@
 //!
 //! $PSTMGETUCODE*<checksum><cr><lf>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -14,8 +14,8 @@ impl Command for GetUniqueCode {
     const MAX_LEN: usize = 18;
     const CMD: &'static str = "PSTMGETUCODE";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
-        let mut s = format!("${}", Self::CMD).map_err(|_| ())?;
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
+        let mut s = format!("${}", Self::CMD)?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

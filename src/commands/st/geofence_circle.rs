@@ -13,7 +13,7 @@
 //!
 //! $PSTMCFGGEOCIR, <circleid›,<en>,<lat>,<lon›,<rad›*<checksum><cr><1f>
 
-use crate::Command;
+use crate::{Command, CommandError};
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -29,7 +29,7 @@ impl Command for ConfigureGeofenceCircle {
     const MAX_LEN: usize = 24 + 47;
     const CMD: &'static str = "PSTMCFGGEOCIR";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let mut s = format!(
             "${},{},{},{:.8},{:.8},{:.8}",
             Self::CMD,
@@ -38,8 +38,7 @@ impl Command for ConfigureGeofenceCircle {
             self.lat,
             self.lon,
             self.rad
-        )
-        .map_err(|_| ())?;
+        )?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

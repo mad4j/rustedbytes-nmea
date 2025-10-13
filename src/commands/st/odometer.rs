@@ -14,6 +14,7 @@
 //! $PSTMCFGODO,<en>,<enmsg>,<alarm>*<checksum><cr><lf>
 
 use crate::commands::Command;
+use crate::CommandError;
 use heapless::{format, String};
 
 #[derive(Debug, Clone)]
@@ -28,10 +29,10 @@ impl Command for ConfigureOdometer {
     const MAX_LEN: usize = 19 + 7;
     const CMD: &'static str = "PSTMCFGODO";
 
-    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
+    fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, CommandError> {
         let en = if self.en { 1 } else { 0 };
         let enmsg = if self.enmsg { 1 } else { 0 };
-        let mut s = format!("${},{},{},{}", Self::CMD, en, enmsg, self.alarm).map_err(|_| ())?;
+        let mut s = format!("${},{},{},{}", Self::CMD, en, enmsg, self.alarm)?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }
