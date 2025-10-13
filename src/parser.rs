@@ -130,6 +130,8 @@ impl NmeaParser {
             MessageType::GLL => parsed.as_gll().map(NmeaMessage::GLL),
             MessageType::VTG => parsed.as_vtg().map(NmeaMessage::VTG),
             MessageType::GNS => parsed.as_gns().map(NmeaMessage::GNS),
+            #[cfg(feature = "st-teseo-liv3")]
+            MessageType::PSTM => parsed.as_st(&buffer[1..]).map(NmeaMessage::StPropriety),
             MessageType::Unknown => None,
         }
     }
@@ -138,6 +140,11 @@ impl NmeaParser {
     fn identify_message(&self, header_bytes: &[u8]) -> (TalkerId, MessageType) {
         if header_bytes.len() < 5 {
             return (TalkerId::Unknown, MessageType::Unknown);
+        }
+
+        #[cfg(feature = "st-teseo-liv3")]
+        if header_bytes.starts_with(b"PSTM") {
+            return (TalkerId::PSTM, MessageType::PSTM);
         }
 
         let talker_id = match &header_bytes[0..2] {

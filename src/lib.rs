@@ -1,10 +1,14 @@
 #![no_std]
-
+#![cfg_attr(feature = "commands", feature(generic_const_exprs))]
 //! NMEA 0183 parser library
 //!
 //! This library provides a `no_std` compatible NMEA 0183 parser for parsing
 //! GPS/GNSS data from receivers.
 
+extern crate alloc;
+
+#[cfg(feature = "commands")]
+mod commands;
 mod message;
 mod parser;
 mod types;
@@ -13,6 +17,9 @@ mod types;
 pub use message::{Field, GgaData, GllData, GsaData, GsvData, RmcData, SatelliteInfo, VtgData};
 pub use parser::NmeaParser;
 pub use types::*;
+
+#[cfg(feature = "commands")]
+pub use commands::*;
 
 /// Parse result type: returns optional message and bytes consumed, or error with bytes consumed
 pub type ParseResult = Result<(Option<NmeaMessage>, usize), (ParseError, usize)>;

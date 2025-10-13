@@ -11,3 +11,9 @@ keywords = ["nmea", "gps", "gnss", "no_std", "embedded"]
 categories = ["embedded", "no-std", "parsing"]
 
 [dependencies]
+heapless = {version = "0.9", optional = true}
+
+[features]
+default = ["st-teseo-liv3", "commands"]
+st-teseo-liv3 = ["dep:heapless"]
+commands = ["dep:heapless"]

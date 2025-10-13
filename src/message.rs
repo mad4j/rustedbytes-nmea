@@ -5,6 +5,7 @@
 //! submodules for each message type.
 
 use crate::types::*;
+use core::ops::{BitOrAssign, ShlAssign};
 
 // Message type implementations
 mod gga;
@@ -13,6 +14,7 @@ mod gns;
 mod gsa;
 mod gsv;
 mod rmc;
+mod st;
 mod vtg;
 
 // Re-export message data structures
@@ -22,10 +24,21 @@ pub use gns::GnsData;
 pub use gsa::GsaData;
 pub use gsv::{GsvData, SatelliteInfo};
 pub use rmc::RmcData;
+pub use st::StMessageData;
 pub use vtg::VtgData;
 
 /// Maximum number of fields in an NMEA sentence
+#[cfg(not(feature = "st-teseo-liv3"))]
 pub(crate) const MAX_FIELDS: usize = 20;
+
+#[cfg(not(feature = "st-teseo-liv3"))]
+pub(crate) const FIELD_SIZE_BYTES: usize = 16;
+
+#[cfg(feature = "st-teseo-liv3")]
+pub(crate) const MAX_FIELDS: usize = 40;
+
+#[cfg(feature = "st-teseo-liv3")]
+pub(crate) const FIELD_SIZE_BYTES: usize = 32;
 
 /// Parsed NMEA sentence data (internal representation)
 ///
@@ -61,6 +74,29 @@ impl ParsedSentence {
     pub(crate) fn parse_field_char(&self, index: usize) -> Option<char> {
         self.get_field_str(index)?.chars().next()
     }
+
+    /// Helper to parse a field as a hexadecimal
+    pub(crate) fn parse_hex_field<T>(&self, index: usize) -> Option<T>
+    where
+        T: From<u8> + Default + ShlAssign + BitOrAssign,
+    {
+        let hex_str = self.get_field_str(index)?;
+        let mut val = T::default();
+
+        for c in hex_str.chars() {
+            let c = match c {
+                'a'..='f' => c as u8 - b'a' + 10,
+                'A'..='F' => c as u8 - b'A' + 10,
+                '0'..='9' => c as u8 - b'0',
+                _ => return None,
+            };
+
+            val <<= 4.into();
+            val |= c.into();
+        }
+
+        Some(val)
+    }
 }
 
 /// Represents a field value in an NMEA message
@@ -70,17 +106,17 @@ impl ParsedSentence {
 /// string storage without heap allocation.
 #[derive(Debug, Clone, Copy)]
 pub struct Field {
-    data: [u8; 16], // Reduced from 32 to 16 bytes - sufficient for most NMEA fields
-    len: u8,        // Changed from usize to u8 for memory efficiency
+    data: [u8; FIELD_SIZE_BYTES], // Sufficient for most NMEA fields
+    len: u8,                      // Changed from usize to u8 for memory efficiency
 }
 
 impl Field {
     /// Create a field from a byte slice
     ///
-    /// Copies up to 16 bytes from the input slice.
+    /// Copies up to FIELD_SIZE_BYTES bytes from the input slice.
     pub(crate) fn from_bytes(bytes: &[u8]) -> Self {
-        let copy_len = bytes.len().min(16);
-        let mut data = [0; 16];
+        let copy_len = bytes.len().min(FIELD_SIZE_BYTES);
+        let mut data = [0; FIELD_SIZE_BYTES];
         data[..copy_len].copy_from_slice(&bytes[..copy_len]);
 
         Field {
@@ -99,5 +135,59 @@ impl Field {
     /// Get the field as a byte slice
     pub fn as_bytes(&self) -> &[u8] {
         &self.data[..self.len as usize]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::message::{ParsedSentence, MAX_FIELDS};
+    use crate::{Field, MessageType, TalkerId};
+
+    #[test]
+    fn test_parse_hex_field() {
+        let mut sentence = ParsedSentence {
+            message_type: MessageType::GGA,
+            talker_id: TalkerId::GP,
+            fields: [None; MAX_FIELDS],
+            field_count: 1,
+        };
+        [
+            (b"1" as &[u8], Some(0x1)),
+            (b"A1B2C3D4E5F6A7B8", Some(0xA1B2C3D4E5F6A7B8)),
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
+            sentence.fields[0] = Some(Field::from_bytes(s));
+            assert_eq!(sentence.parse_hex_field::<u64>(0), o);
+        });
+
+        [
+            (b"1" as &[u8], Some(0x1)),
+            (b"A1B2C3D4", Some(0xA1B2C3D4)),
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
+            sentence.fields[0] = Some(Field::from_bytes(s));
+            assert_eq!(sentence.parse_hex_field::<u32>(0), o);
+        });
+
+        [
+            (b"1" as &[u8], Some(0x1)),
+            (b"a1b2", Some(0xA1B2)),
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
+            sentence.fields[0] = Some(Field::from_bytes(s));
+            assert_eq!(sentence.parse_hex_field::<u16>(0), o);
+        });
     }
 }
