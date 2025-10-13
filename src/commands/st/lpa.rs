@@ -43,8 +43,8 @@
 //! >,<adaptive_feat>,<adaptive_duty_cicle>,<ehpe_th>,<num_of_sat>,<duty_off>,<const_type>*<check
 //! sum><cr><lf>
 
-use heapless::{format, String};
 use crate::commands::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone)]
 #[repr(u8)]
@@ -99,7 +99,8 @@ impl Command for ConfigureLowPowerAlgorithm {
             self.num_of_sat,
             self.duty_off,
             self.const_type
-        ).map_err(|_| ())?;
+        )
+        .map_err(|_| ())?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }

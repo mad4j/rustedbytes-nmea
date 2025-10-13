@@ -35,8 +35,8 @@ impl DifferentialCorrectionData {
         let len = (sentence.field_count - 3) / 2;
 
         for i in 0..len {
-            let satellite_id = sentence.parse_field::<u16>(3 + i*2)?;
-            let correction_available = sentence.parse_field::<u32>(3 + i*2 + 1)?;
+            let satellite_id = sentence.parse_field::<u16>(3 + i * 2)?;
+            let correction_available = sentence.parse_field::<u32>(3 + i * 2 + 1)?;
             if satellites
                 .push(SatelliteCorrection {
                     satellite_id,
@@ -64,9 +64,10 @@ mod tests {
 
     #[test]
     fn test_parse_differential_correction_data() {
-
         let mut parser = NmeaParser::new();
-        let (msg, _size) = parser.parse_bytes(b"$PSTMDIFF,03,02,01,100,02,200,03,300*1C\r\n").unwrap();
+        let (msg, _size) = parser
+            .parse_bytes(b"$PSTMDIFF,03,02,01,100,02,200,03,300*1C\r\n")
+            .unwrap();
         let msg = msg.unwrap();
         assert_eq!(msg.message_type(), MessageType::PSTM);
         assert_eq!(msg.talker_id(), TalkerId::PSTM);
@@ -86,8 +87,7 @@ mod tests {
                 assert_eq!(data.satellites[2].satellite_id, 3);
                 assert_eq!(data.satellites[2].correction_available, 300);
             }
-            _ => panic!("Expected DifferentialCorrectionData")
+            _ => panic!("Expected DifferentialCorrectionData"),
         }
     }
-
 }

@@ -13,15 +13,15 @@
 //!
 //! $PSTMCFGAJM,‹gpsmode>,‹glonas smode›*<checksum><cr><lf>
 
-use heapless::{format, String};
 use crate::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum NotchFilterMode {
     Disable = 0,
     Normal = 1,
-    Auto = 2
+    Auto = 2,
 }
 
 #[derive(Debug, Clone)]
@@ -56,10 +56,6 @@ mod test {
             gpsmode: NotchFilterMode::Auto,
             glonassmode: NotchFilterMode::Normal,
         };
-        assert_eq!(
-            cmd.to_string().unwrap(),
-            "$PSTMCFGAJM,2,1*1D\r\n"
-        );
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMCFGAJM,2,1*1D\r\n");
     }
-
 }

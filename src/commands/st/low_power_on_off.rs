@@ -24,7 +24,7 @@
 //! Duty Cycle fix period           Decimal, 1 digits   Time between 2 fixes
 //!                                                     Typical value: 1, 3, 5
 //!                                                     The receiver provide a fix every fix period
-//! 
+//!
 //! Periodic mode settings
 //! Periodic mode                   Decimal, 1 digit    Setup Active or Standby periodic mode
 //!                                                     0: OFF
@@ -52,8 +52,8 @@
 //! To Enable Periodic Mode:
 //! $PSTMLOWPOWERONOFF, 1,0, 0, 0, 0, 0, 0, <Periodic mode›, ‹Fixperiod›,<Number of fix>,<Ephemeris refresh›, <RTC refresh›,<No Fix timeout>,<No Fix timeout Off duration›*<checksum><cr><lf>
 
-use heapless::{format, String};
 use crate::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone)]
 pub struct ConstellationMask {
@@ -61,7 +61,7 @@ pub struct ConstellationMask {
     pub glonass: bool,
     pub qzss: bool,
     pub galileo: bool,
-    pub beidou: bool
+    pub beidou: bool,
 }
 
 impl ConstellationMask {
@@ -72,7 +72,7 @@ impl ConstellationMask {
             | if self.qzss { 0b0000_0100 } else { 0 }
             | if self.galileo { 0b0000_1000 } else { 0 }
             | if self.beidou { 0b1000_0000 } else { 0 };
-        let val: String<3>  = format!("{}", val).map_err(|_| ())?;
+        let val: String<3> = format!("{}", val).map_err(|_| ())?;
         Ok(val)
     }
 }
@@ -81,7 +81,7 @@ impl ConstellationMask {
 pub enum PeriodicMode {
     Off,
     Active,
-    Standby
+    Standby,
 }
 
 impl PeriodicMode {
@@ -89,7 +89,7 @@ impl PeriodicMode {
         let val = match self {
             PeriodicMode::Off => 0,
             PeriodicMode::Active => 1,
-            PeriodicMode::Standby => 3
+            PeriodicMode::Standby => 3,
         };
         let val: String<1> = format!("{}", val).map_err(|_| ())?;
         Ok(val)
@@ -116,7 +116,6 @@ pub struct ConfigureLowPowerOnOff {
 }
 
 impl Command for ConfigureLowPowerOnOff {
-
     const MAX_LEN: usize = 35 + 26;
     const CMD: &'static str = "PSTMLOWPOWERONOFF";
 
@@ -135,11 +134,15 @@ impl Command for ConfigureLowPowerOnOff {
             ephemeris_refresh,
             rtc_calibration,
             no_fix_cnt,
-            no_fix_off
+            no_fix_off,
         } = self;
         if *low_power_enable {
             if *periodic_mode != PeriodicMode::Off {
-                let fix_period = if *fix_period > 99999 { 99999 } else { *fix_period };
+                let fix_period = if *fix_period > 99999 {
+                    99999
+                } else {
+                    *fix_period
+                };
                 let fix_on_time = if *fix_on_time > 99 { 99 } else { *fix_on_time };
                 let no_fix_cnt = if *no_fix_cnt > 99 { 99 } else { *no_fix_cnt };
                 let no_fix_off = if *no_fix_off > 99 { 99 } else { *no_fix_off };
@@ -154,14 +157,27 @@ impl Command for ConfigureLowPowerOnOff {
                     if *rtc_calibration { 1 } else { 0 },
                     no_fix_cnt,
                     no_fix_off
-                ).map_err(|_| ())?;
+                )
+                .map_err(|_| ())?;
                 self.append_checksum_and_crlf(&mut s)?;
                 Ok(s)
             } else {
                 let constellation_mask = constellation_mask.to_string()?;
-                let ehpe_threshold = if *ehpe_threshold > 999 { 999 } else { *ehpe_threshold };
-                let max_tracked_satellites = if *max_tracked_satellites > 99 { 99 } else { *max_tracked_satellites };
-                let duty_cycle_fix_period = if *duty_cycle_fix_period > 9 { 9 } else { *duty_cycle_fix_period };
+                let ehpe_threshold = if *ehpe_threshold > 999 {
+                    999
+                } else {
+                    *ehpe_threshold
+                };
+                let max_tracked_satellites = if *max_tracked_satellites > 99 {
+                    99
+                } else {
+                    *max_tracked_satellites
+                };
+                let duty_cycle_fix_period = if *duty_cycle_fix_period > 9 {
+                    9
+                } else {
+                    *duty_cycle_fix_period
+                };
                 let mut s = format!(
                     "${},1,{},{},{},{},{},{},0,0,0,0,0,0,0",
                     Self::CMD,
@@ -171,7 +187,8 @@ impl Command for ConfigureLowPowerOnOff {
                     if *switch_constellation_features { 1 } else { 0 },
                     if *duty_cycle_enable { 1 } else { 0 },
                     duty_cycle_fix_period,
-                ).map_err(|_| ())?;
+                )
+                .map_err(|_| ())?;
                 self.append_checksum_and_crlf(&mut s)?;
                 Ok(s)
             }
@@ -250,7 +267,10 @@ mod tests {
             no_fix_cnt: 5,
             no_fix_off: 5,
         };
-        assert_eq!(cmd.to_string().unwrap(), "$PSTMLOWPOWERONOFF,1,0,0,0,0,0,0,3,100,10,1,1,5,5*6D\r\n");
+        assert_eq!(
+            cmd.to_string().unwrap(),
+            "$PSTMLOWPOWERONOFF,1,0,0,0,0,0,0,3,100,10,1,1,5,5*6D\r\n"
+        );
     }
 
     #[test]
@@ -277,6 +297,9 @@ mod tests {
             no_fix_cnt: 0,
             no_fix_off: 0,
         };
-        assert_eq!(cmd.to_string().unwrap(), "$PSTMLOWPOWERONOFF,1,3,100,10,1,1,5,0,0,0,0,0,0,0*68\r\n");
+        assert_eq!(
+            cmd.to_string().unwrap(),
+            "$PSTMLOWPOWERONOFF,1,3,100,10,1,1,5,0,0,0,0,0,0,0*68\r\n"
+        );
     }
 }

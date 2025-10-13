@@ -18,7 +18,7 @@ use core::str::FromStr;
 pub enum HarwareType {
     Sta8088,
     Sta8089,
-    Sta8090
+    Sta8090,
 }
 
 impl FromStr for HarwareType {
@@ -57,7 +57,7 @@ impl FromStr for Mask {
             "0x422BC043" => Self::Bb,
             "0x522BC043" => Self::Bc,
             "0x622BC043" => Self::Bd,
-            _ => return Err(())
+            _ => return Err(()),
         };
         Ok(v)
     }
@@ -75,10 +75,7 @@ impl HardwareVersion {
         let mut s = val.split("_");
         let hw_type = s.next()?.parse().ok()?;
         let mask = s.next()?.parse().ok()?;
-        Some(HardwareVersion {
-            hw_type,
-            mask,
-        })
+        Some(HardwareVersion { hw_type, mask })
     }
 }
 
@@ -90,7 +87,9 @@ mod tests {
     #[test]
     fn test_hw_version() {
         let parser = NmeaParser::new();
-        let (msg, _i) = parser.parse_bytes(b"$PSTMVER,STA8088_0x2229D041*0F\r\n").unwrap();
+        let (msg, _i) = parser
+            .parse_bytes(b"$PSTMVER,STA8088_0x2229D041*0F\r\n")
+            .unwrap();
         let msg = msg.unwrap();
         match msg {
             crate::NmeaMessage::StPropriety(StMessageData::HardwareVersion(h)) => {
@@ -100,7 +99,9 @@ mod tests {
             _ => panic!("Unexpected message type"),
         }
 
-        let (msg, _i) = parser.parse_bytes(b"$PSTMVER,STA8089_0x122BC043*0F\r\n").unwrap();
+        let (msg, _i) = parser
+            .parse_bytes(b"$PSTMVER,STA8089_0x122BC043*0F\r\n")
+            .unwrap();
         let msg = msg.unwrap();
         match msg {
             crate::NmeaMessage::StPropriety(StMessageData::HardwareVersion(h)) => {
@@ -110,5 +111,4 @@ mod tests {
             _ => panic!("Unexpected message type"),
         }
     }
-
 }

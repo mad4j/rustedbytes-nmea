@@ -7,11 +7,11 @@
 
 extern crate alloc;
 
+#[cfg(feature = "commands")]
+mod commands;
 mod message;
 mod parser;
 mod types;
-#[cfg(feature = "commands")]
-mod commands;
 
 // Re-export public API
 pub use message::{Field, GgaData, GllData, GsaData, GsvData, RmcData, SatelliteInfo, VtgData};

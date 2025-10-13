@@ -13,8 +13,8 @@
 //!
 //! $PSTMVER,<Lib>_<Ver>_<Type>*<checksum>‹cr><lf>
 
-use core::str::FromStr;
 use crate::message::ParsedSentence;
+use core::str::FromStr;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Library {

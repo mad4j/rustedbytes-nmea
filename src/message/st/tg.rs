@@ -58,7 +58,7 @@ pub struct KalmanFilterConfiguration {
     pub frequency_ramp_on: bool,
     pub velocity_estimator_model: KalmanVelocityEstimatorModel,
     pub velocity_estimator_filter: KalmanVelocityEstimatorFilter,
-    pub fde_status: bool
+    pub fde_status: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -106,8 +106,16 @@ impl TimeAndSatelliteInformation {
             walking_mode: (kf_config_status & 0b0000_0001) != 0,
             stop_detection: (kf_config_status & 0b0000_0010) != 0,
             frequency_ramp_on: (kf_config_status & 0b0000_0100) != 0,
-            velocity_estimator_model: if (kf_config_status & 0b0000_1000) != 0 { KalmanVelocityEstimatorModel::MultipleModel } else { KalmanVelocityEstimatorModel::SingleModel },
-            velocity_estimator_filter: if (kf_config_status & 0b0001_0000) != 0 { KalmanVelocityEstimatorFilter::Fast } else { KalmanVelocityEstimatorFilter::Slow },
+            velocity_estimator_model: if (kf_config_status & 0b0000_1000) != 0 {
+                KalmanVelocityEstimatorModel::MultipleModel
+            } else {
+                KalmanVelocityEstimatorModel::SingleModel
+            },
+            velocity_estimator_filter: if (kf_config_status & 0b0001_0000) != 0 {
+                KalmanVelocityEstimatorFilter::Fast
+            } else {
+                KalmanVelocityEstimatorFilter::Slow
+            },
             fde_status: (kf_config_status & 0b0010_0000) != 0,
         };
 

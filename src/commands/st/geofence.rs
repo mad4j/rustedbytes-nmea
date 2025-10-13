@@ -13,8 +13,8 @@
 //!
 //! $PSTMCGGEOFENCE, <en>, <tol>*<checksum><cr><lf>
 
-use heapless::{format, String};
 use crate::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
@@ -22,7 +22,7 @@ pub enum GeofenceToleranceLevel {
     None = 0,
     Level1 = 1,
     Level2 = 2,
-    Level3 = 3
+    Level3 = 3,
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +41,8 @@ impl Command for ConfigureEnableGeofenceCircles {
             Self::CMD,
             if self.en { 1 } else { 0 },
             self.tol as u8
-        ).map_err(|_| ())?;
+        )
+        .map_err(|_| ())?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }
@@ -57,10 +58,7 @@ mod test {
             en: true,
             tol: GeofenceToleranceLevel::Level1,
         };
-        assert_eq!(
-            cmd.to_string().unwrap(),
-            "$PSTMCGGEOFENCE,1,1*18\r\n"
-        );
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMCGGEOFENCE,1,1*18\r\n");
     }
 
     #[test]
@@ -69,10 +67,7 @@ mod test {
             en: false,
             tol: GeofenceToleranceLevel::None,
         };
-        assert_eq!(
-            cmd.to_string().unwrap(),
-            "$PSTMCGGEOFENCE,0,0*18\r\n"
-        );
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMCGGEOFENCE,0,0*18\r\n");
     }
 
     #[test]
@@ -81,11 +76,6 @@ mod test {
             en: true,
             tol: GeofenceToleranceLevel::Level3,
         };
-        assert_eq!(
-            cmd.to_string().unwrap(),
-            "$PSTMCGGEOFENCE,1,3*1A\r\n"
-        );
+        assert_eq!(cmd.to_string().unwrap(), "$PSTMCGGEOFENCE,1,3*1A\r\n");
     }
-
 }
-

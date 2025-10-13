@@ -13,8 +13,8 @@
 //!
 //! $PSTMCFGGEOCIR, <circleid›,<en>,<lat>,<lon›,<rad›*<checksum><cr><1f>
 
-use heapless::{format, String};
 use crate::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone)]
 pub struct ConfigureGeofenceCircle {
@@ -22,7 +22,7 @@ pub struct ConfigureGeofenceCircle {
     pub en: bool,
     pub lat: f64,
     pub lon: f64,
-    pub rad: f64
+    pub rad: f64,
 }
 
 impl Command for ConfigureGeofenceCircle {
@@ -38,7 +38,8 @@ impl Command for ConfigureGeofenceCircle {
             self.lat,
             self.lon,
             self.rad
-        ).map_err(|_| ())?;
+        )
+        .map_err(|_| ())?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }
@@ -72,5 +73,4 @@ mod test {
         let actual = cmd.to_string().unwrap();
         assert_eq!(actual, expected);
     }
-
 }

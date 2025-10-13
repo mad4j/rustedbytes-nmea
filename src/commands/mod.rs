@@ -5,7 +5,7 @@ mod st;
 
 #[cfg(feature = "st-teseo-liv3")]
 pub use st::{
-    anti_jam::{NotchFilterMode, ConfigureAntiJamming},
+    anti_jam::{ConfigureAntiJamming, NotchFilterMode},
     geofence::{ConfigureEnableGeofenceCircles, GeofenceToleranceLevel},
     geofence_circle::ConfigureGeofenceCircle,
     get_sw_version::GetSoftwareVersion,
@@ -17,7 +17,8 @@ pub use st::{
 /// Generate NMEA checksum for a sentence
 pub(crate) fn nmea_checksum(sentence: &str) -> u8 {
     // Strip leading '$' and trailing checksum (if any)
-    let trimmed = sentence.trim_start_matches('$')
+    let trimmed = sentence
+        .trim_start_matches('$')
         .split('*')
         .next()
         .unwrap_or(sentence);
@@ -46,11 +47,19 @@ mod tests {
     #[test]
     fn test_nmea_checksum() {
         [
-            ("$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,", 71),
-            ("GPRMC,235947,A,5540.505,N,03736.280,E,000.0,360.0,130998,011.3,E", 123),
-            ("$GPGSA,A,3,04,05,09,12,24,25,29,31,32,,,1.8,1.0,1.5*00",16),
+            (
+                "$GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,",
+                71,
+            ),
+            (
+                "GPRMC,235947,A,5540.505,N,03736.280,E,000.0,360.0,130998,011.3,E",
+                123,
+            ),
+            ("$GPGSA,A,3,04,05,09,12,24,25,29,31,32,,,1.8,1.0,1.5*00", 16),
             ("", 0),
-        ].into_iter().for_each(|(input, checksum)| {
+        ]
+        .into_iter()
+        .for_each(|(input, checksum)| {
             assert_eq!(super::nmea_checksum(input), checksum);
         })
     }

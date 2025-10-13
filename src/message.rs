@@ -4,8 +4,8 @@
 //! and fields. Message-specific parsing implementations are included in separate
 //! submodules for each message type.
 
-use core::ops::{BitOrAssign, ShlAssign};
 use crate::types::*;
+use core::ops::{BitOrAssign, ShlAssign};
 
 // Message type implementations
 mod gga;
@@ -107,7 +107,7 @@ impl ParsedSentence {
 #[derive(Debug, Clone, Copy)]
 pub struct Field {
     data: [u8; FIELD_SIZE_BYTES], // Sufficient for most NMEA fields
-    len: u8,        // Changed from usize to u8 for memory efficiency
+    len: u8,                      // Changed from usize to u8 for memory efficiency
 }
 
 impl Field {
@@ -138,7 +138,6 @@ impl Field {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::message::{ParsedSentence, MAX_FIELDS};
@@ -155,10 +154,12 @@ mod tests {
         [
             (b"1" as &[u8], Some(0x1)),
             (b"A1B2C3D4E5F6A7B8", Some(0xA1B2C3D4E5F6A7B8)),
-            (b"ABC", Some(0xABC)),  // Uneven amount of characters
-            (b"GHIJ", None),        // Invalid hex
-            (b"", Some(0)),         // Empty field
-        ].into_iter().for_each(|(s, o)| {
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
             sentence.fields[0] = Some(Field::from_bytes(s));
             assert_eq!(sentence.parse_hex_field::<u64>(0), o);
         });
@@ -166,10 +167,12 @@ mod tests {
         [
             (b"1" as &[u8], Some(0x1)),
             (b"A1B2C3D4", Some(0xA1B2C3D4)),
-            (b"ABC", Some(0xABC)),  // Uneven amount of characters
-            (b"GHIJ", None),        // Invalid hex
-            (b"", Some(0)),         // Empty field
-        ].into_iter().for_each(|(s, o)| {
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
             sentence.fields[0] = Some(Field::from_bytes(s));
             assert_eq!(sentence.parse_hex_field::<u32>(0), o);
         });
@@ -177,10 +180,12 @@ mod tests {
         [
             (b"1" as &[u8], Some(0x1)),
             (b"A1B2", Some(0xA1B2)),
-            (b"ABC", Some(0xABC)),  // Uneven amount of characters
-            (b"GHIJ", None),        // Invalid hex
-            (b"", Some(0)),         // Empty field
-        ].into_iter().for_each(|(s, o)| {
+            (b"ABC", Some(0xABC)), // Uneven amount of characters
+            (b"GHIJ", None),       // Invalid hex
+            (b"", Some(0)),        // Empty field
+        ]
+        .into_iter()
+        .for_each(|(s, o)| {
             sentence.fields[0] = Some(Field::from_bytes(s));
             assert_eq!(sentence.parse_hex_field::<u16>(0), o);
         });

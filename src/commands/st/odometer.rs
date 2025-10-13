@@ -13,8 +13,8 @@
 //!
 //! $PSTMCFGODO,<en>,<enmsg>,<alarm>*<checksum><cr><lf>
 
-use heapless::{format, String};
 use crate::commands::Command;
+use heapless::{format, String};
 
 #[derive(Debug, Clone)]
 pub struct ConfigureOdometer {
@@ -24,7 +24,6 @@ pub struct ConfigureOdometer {
 }
 
 impl Command for ConfigureOdometer {
-
     // 31 for command, commas, checksum and crlf
     const MAX_LEN: usize = 19 + 7;
     const CMD: &'static str = "PSTMCFGODO";
@@ -32,13 +31,7 @@ impl Command for ConfigureOdometer {
     fn to_string(&self) -> Result<String<{ Self::MAX_LEN }>, ()> {
         let en = if self.en { 1 } else { 0 };
         let enmsg = if self.enmsg { 1 } else { 0 };
-        let mut s = format!(
-            "${},{},{},{}",
-            Self::CMD,
-            en,
-            enmsg,
-            self.alarm
-        ).map_err(|_| ())?;
+        let mut s = format!("${},{},{},{}", Self::CMD, en, enmsg, self.alarm).map_err(|_| ())?;
         self.append_checksum_and_crlf(&mut s)?;
         Ok(s)
     }
@@ -67,5 +60,4 @@ mod test {
         let actual = cmd.to_string().unwrap();
         assert_eq!(actual, expected);
     }
-
 }
