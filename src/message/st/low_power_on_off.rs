@@ -103,8 +103,8 @@ impl LowPowerOnOff {
 
 #[cfg(test)]
 mod tests {
-    use crate::message::StMessageData;
     use super::*;
+    use crate::message::StMessageData;
 
     #[test]
     fn test_low_power_on_off() {
@@ -114,7 +114,9 @@ mod tests {
             .unwrap();
 
         let msg = match msg {
-            Some(crate::NmeaMessage::StPropriety(StMessageData::ConfigLowPowerOnOffResult(msg))) => msg.unwrap(),
+            Some(crate::NmeaMessage::StPropriety(StMessageData::ConfigLowPowerOnOffResult(
+                msg,
+            ))) => msg.unwrap(),
             _ => panic!("Unexpected message type"),
         };
 
@@ -140,5 +142,4 @@ mod tests {
         assert!(PeriodicMode::try_from(2).is_err());
         assert!(PeriodicMode::try_from(4).is_err());
     }
-
 }
